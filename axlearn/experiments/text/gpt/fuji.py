@@ -558,7 +558,7 @@ def trainer_configs(
                     arch=arch, model_size="golden-run-test", version=f"v{version.value}"
                 )
             ] = wrapper
-        if model_size in ("1B", "3B", "7B", "8B"):
+        if model_size in ("1B", "3B", "7B", "8B", "70B"):
 
             def make_single_host_config(base_config_name: str) -> SpmdTrainer.Config:
                 """Make a single-host variant of the base config.
@@ -582,7 +582,8 @@ def trainer_configs(
                 # pytype: enable=annotation-type-mismatch
 
                 # The original config was supposed to run on >= 32 machines.
-                cfg.input.batcher.global_batch_size //= 32
+                # cfg.input.batcher.global_batch_size //= 32
+                cfg.input.batcher.global_batch_size = 16
                 for evaler in cfg.evalers.values():
                     evaler.input.batcher.global_batch_size //= 32
                 return cfg
