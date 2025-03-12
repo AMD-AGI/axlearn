@@ -784,22 +784,32 @@ def cudnn_dot_product_attention(
     Raises:
         NotImplementedError: If qkv_layout is not supported.
     """
+    from transformer_engine.jax.flax.transformer import DotProductAttention
 
     if qkv_layout != "BTNH":
         raise NotImplementedError(f"Unsupported qkv_layout: {qkv_layout}")
 
-    mask_type = MaskType.NO_MASK if not causal else MaskType.CAUSAL
+    mask_type = "no_mask" if not causal else "causal"
 
-    output = dot_product_attention(
+    _, _, num_query_heads, head_dim = query.shape
+    _, _, num_kv_heads, _ = key.shape
+    dot_product_attention = DotProductAttention(
+        head_dim=head_dim,
+        num_attention_heads=num_query_heads,
+        num_gqa_groups=num_kv_heads,
+        attn_mask_type=mask_type,  # 'no_mask', 'padding', 'causal', or 'padding_causal'
+        attn_bias_type="no_bias",  # 'no_bias', 'pre_scale_bias' or 'post_scale_bias'
+        attention_dropout=dropout_rate,
+        dtype=jnp.bfloat16,
+        qkv_layout="BSHD_BSHD_BSHD",  # 'BS3HD', 'BSHD_BS2HD' or 'BSHD_BSHD_BSHD'
+        transpose_batch_sequence=False,
+    )
+
+    output = dot_product_attention.apply(
+        {},
         query=query,
         key=key,
         value=value,
-        bias=bias,
         mask=mask,
-        scale=softmax_scale,
-        seed=seed,
-        dropout_rate=dropout_rate,
-        mask_type=mask_type,
-        qkv_layout=qkv_layout,
     )
     return output
