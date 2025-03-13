@@ -1,6 +1,6 @@
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH # required for hipblaslt
 
-export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=5 --xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592 --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE"
+export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=5 --xla_gpu_enable_latency_hiding_scheduler=true"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.98
 
 export NVTE_ALLOW_NONDETERMINISTIC_ALGO=1
