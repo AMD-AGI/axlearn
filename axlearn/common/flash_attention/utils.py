@@ -10,7 +10,8 @@ from absl import logging
 
 from axlearn.common.attention import NEG_INF, MaskFn, causal_mask, softmax_with_biases
 from axlearn.common.flash_attention.gpu_attention import cudnn_dot_product_attention
-from axlearn.common.flash_attention.gpu_attention import flash_attention as gpu_flash_attention
+# from axlearn.common.flash_attention.gpu_attention import flash_attention as mha
+from axlearn.common.flash_attention.gpu_attention_pallas import mha as mha
 from axlearn.common.flash_attention.tpu_attention import tpu_flash_attention
 from axlearn.common.utils import Tensor
 
@@ -119,25 +120,42 @@ def flash_attention_implementation(
                 or jnp.float32 in (query.dtype, key.dtype, value.dtype)
             ):
                 logging.warning("Flash attention falling back to Triton GPU kernel.")
-                return gpu_flash_attention(
+                return mha(
                     query,
                     key,
                     value,
-                    bias=bias,
+                    num_warps=2, 
+                    num_stages=1, 
+                    block_k=32, 
+                    block_q=32,
                     segment_ids=segment_ids,
-                    softmax_scale=softmax_scale,
+                    sm_scale=softmax_scale,
                     causal=causal,
-                )
+                ) 
             else:
-                return cudnn_dot_product_attention(
+                logging.warning("Flash attention falling back to Triton GPU kernel.")
+                print(query.shape)
+                return mha(
                     query,
                     key,
                     value,
-                    bias=bias,
-                    softmax_scale=softmax_scale,
+                    num_warps=2, 
+                    num_stages=1, 
+                    block_k=32, 
+                    block_q=32,
+                    segment_ids=segment_ids,
+                    sm_scale=softmax_scale,
                     causal=causal,
-                    dropout_rate=0.0,
                 )
+                # return cudnn_dot_product_attention(
+                #     query,
+                #     key,
+                #     value,
+                #     bias=bias,
+                #     softmax_scale=softmax_scale,
+                #     causal=causal,
+                #     dropout_rate=0.0,
+                # )
 
         return jit_attn
 
