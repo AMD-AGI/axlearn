@@ -28,4 +28,6 @@ python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
-  --mesh_selector="gpu-remat-test" \
+  --mesh_selector="gpu-remat-test" \ 
+  # --trainer_dir="/home/axlearn/single-node-70B/"  \
+  # --trace_at_steps=0,3,6 
