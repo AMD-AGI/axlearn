@@ -1059,6 +1059,7 @@ class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
             return self._log_unsupported(f"{head_dim=} > 128")
         bias: BaseAttentionBias = input_batch["bias"]
         _, sliding, explicit_bias = split(bias, CausalAttentionBias, SlidingWindowAttentionBias)
+<<<<<<< HEAD
         if sliding.has_value() and not self._allow_explicit_bias:
             if kv_cache_type == KVCache:
                 return self._log_unsupported(
@@ -1075,6 +1076,12 @@ class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
                     "cuDNN doesn't support sliding window with explicit bias "
                     "without folding it into explicit bias."
                 )
+=======
+
+        if sliding.has_value():
+            if self.cfg.dropout_rate != 0.0:
+                return self._log_unsupported("sliding window with dropout has not been tested.)")
+>>>>>>> 9b37416 (support sliding window attention in ROCm TE path)
         if explicit_bias.has_value() and not self._allow_explicit_bias:
             return self._log_unsupported("we don't allow explicit bias at this stage.")
 
@@ -1178,12 +1185,20 @@ class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
 
         _, _, num_query_heads, head_dim = query.shape
         _, _, num_kv_heads, _ = key.shape
+<<<<<<< HEAD
 
         causal, sliding, _ = split(
             bias, CausalAttentionBias, SlidingWindowAttentionBias
         )
         mask_type = AttnMaskType.CAUSAL_MASK if (
                 causal.has_value() or sliding.has_value()) else AttnMaskType.NO_MASK
+=======
+        
+        causal, sliding, _ = split(
+            bias, CausalAttentionBias, SlidingWindowAttentionBias
+        )
+        mask_type = "causal" if (causal.has_value() or sliding.has_value()) else "no_mask"
+>>>>>>> 9b37416 (support sliding window attention in ROCm TE path)
         window_size = None
         if sliding.has_value():
             window_size = (sliding.sliding_window_size, 0)
@@ -1194,12 +1209,21 @@ class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
             qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
             attn_bias_type=AttnBiasType.NO_BIAS,
             attn_mask_type=mask_type,
+<<<<<<< HEAD
             dropout_probability=self.cfg.dropout_rate,
             q_num_heads=num_query_heads,
             kv_num_heads=num_kv_heads,
             q_max_seqlen=query.shape[1],
             kv_max_seqlen=key.shape[1],
             head_dim=head_dim,
+=======
+            attn_bias_type="no_bias",
+            attention_dropout=self.cfg.dropout_rate,
+            dtype=query.dtype,
+            qkv_layout="BSHD_BSHD_BSHD",
+            transpose_batch_sequence=False,
+            scale_factor=self.cfg.softmax_scale,
+>>>>>>> 9b37416 (support sliding window attention in ROCm TE path)
             window_size=window_size,
         )
         assert has_fused_attn_kernel, "Fused attention is not enabled because there is no available kernel.\n"
