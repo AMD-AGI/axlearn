@@ -68,6 +68,13 @@ flags.DEFINE_string(
     None,
     "The mesh selector string. See `SpmdTrainer.Config.mesh_rules` for details.",
 )
+flags.DEFINE_integer("mesh_pipeline", None, "Mesh Axis - pipeline")
+flags.DEFINE_integer("mesh_data", None, "Mesh Axis - data")
+flags.DEFINE_integer("mesh_expert", None, "Mesh Axis - expert")
+flags.DEFINE_integer("mesh_fsdp", None, "Mesh Axis - fsdp")
+flags.DEFINE_integer("mesh_seq", None, "Mesh Axis - seq")
+flags.DEFINE_integer("mesh_model", None, "Mesh Axis - model")
+flags.DEFINE_integer("max_step", None, "Maximum number of steps")
 
 FLAGS = flags.FLAGS
 
@@ -104,6 +111,8 @@ def get_trainer_config(
         select_mesh_config(trainer_config, mesh_selector=flag_values.mesh_selector)
     trainer_config.mesh_axis_names = trainer_config.mesh_axis_names or ("data", "model")
     trainer_config.mesh_shape = trainer_config.mesh_shape or (len(jax.devices()), 1)
+    if all(ele is not None for ele in [flag_values.mesh_pipeline, flag_values.mesh_data, flag_values.mesh_expert, flag_values.mesh_fsdp, flag_values.mesh_seq, flag_values.mesh_model]):
+        trainer_config.mesh_shape = (flag_values.mesh_pipeline, flag_values.mesh_data, flag_values.mesh_expert, flag_values.mesh_fsdp, flag_values.mesh_seq, flag_values.mesh_model)
     if isinstance(trainer_config.mesh_shape, MeshShape):
         trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
     trainer_config.start_trace_steps = [int(el) for el in flag_values.trace_at_steps]
@@ -125,6 +134,10 @@ def get_trainer_config(
         # Set trainer_dir if not already set.
         if not isinstance(trainer_config.checkpointer.trainer_dir, str):
             trainer_config.checkpointer.trainer_dir = trainer_config.dir
+
+    if flag_values.max_step is not None:
+        trainer_config.max_step = flag_values.max_step
+
     return trainer_config
 
 
