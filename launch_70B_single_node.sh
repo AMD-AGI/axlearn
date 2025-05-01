@@ -18,9 +18,10 @@ export NVTE_CK_USES_BWD_V3=1
 export NVTE_CK_IS_V3_ATOMIC_FP32=0
 export NVTE_CK_IS_V3_SPEC=1
 export NVTE_CK_HOW_V3_BF16_CVT=2
- 
+
+export LOG_OUTPUT_FOLDER="${LOG_OUTPUT_FOLDER:=$(pwd)}"
 export STEP_TIMEOUT="${STEP_TIMEOUT:=360}"
-export MAX_STEP="${MAX_STEP:=3}"
+export MAX_STEP="${MAX_STEP:=100}"  # will print out avg. step time per 100 steps
 export NUM_LAYERS="${NUM_LAYERS:=5}"
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
 export MESH_DATA="${MESH_DATA:=1}"
@@ -44,4 +45,4 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_fsdp $MESH_FSDP \
   --mesh_seq $MESH_SEQ \
   --mesh_model $MESH_MODEL \
-  &> output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.log
+  &> ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.log
