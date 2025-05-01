@@ -1,5 +1,5 @@
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true"
+export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2
@@ -21,7 +21,8 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
 
 export LOG_OUTPUT_FOLDER="${LOG_OUTPUT_FOLDER:=$(pwd)}"
 export STEP_TIMEOUT="${STEP_TIMEOUT:=360}"
-export MAX_STEP="${MAX_STEP:=100}"  # will print out avg. step time per 100 steps
+export MAX_STEP="${MAX_STEP:=10}"
+export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=10}"
 export NUM_LAYERS="${NUM_LAYERS:=5}"
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
 export MESH_DATA="${MESH_DATA:=1}"
@@ -37,6 +38,7 @@ python3 -m axlearn.common.launch_trainer_main \
   --jax_backend=gpu \
   --trainer_watchdog_timeout_seconds $STEP_TIMEOUT \
   --max_step $MAX_STEP \
+  --step_to_cal_avg_step_time $STEP_TO_CAL_AVG_STEP_TIME \
   --num_layers $NUM_LAYERS\
   --mesh_selector="amd-mi300-single-node" \
   --mesh_pipeline $MESH_PIPELINE \

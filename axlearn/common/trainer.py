@@ -96,6 +96,9 @@ class SpmdTrainer(Module):
         # The maximum number of steps.
         max_step: Union[int, float] = math.inf
 
+        # The number of steps to calculate and log average step time.
+        step_to_cal_avg_step_time: Union[int] = 100
+
         # The default mesh configuration.
         #
         # If specified as a MeshShape, must have the same length as mesh_axis_names. Implicitly,
@@ -601,7 +604,7 @@ class SpmdTrainer(Module):
                     )
                     self.vlog(3, "Done step %s", self.step)
                     num_steps += 1
-                    if num_steps % 100 == 0:
+                    if num_steps % cfg.step_to_cal_avg_step_time == 0:
                         now = time.perf_counter()
                         average_step_time = (now - start_time) / num_steps
                         self._step_log("Average step time: %s seconds", average_step_time)

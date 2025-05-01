@@ -75,6 +75,7 @@ flags.DEFINE_integer("mesh_fsdp", None, "Mesh Axis - fsdp")
 flags.DEFINE_integer("mesh_seq", None, "Mesh Axis - seq")
 flags.DEFINE_integer("mesh_model", None, "Mesh Axis - model")
 flags.DEFINE_integer("max_step", None, "Maximum number of steps")
+flags.DEFINE_integer("step_to_cal_avg_step_time", None, "The number of steps to calculate and log average step time")
 flags.DEFINE_integer("num_layers", None, "Number of Transformer layers")
 
 FLAGS = flags.FLAGS
@@ -145,6 +146,9 @@ def get_trainer_config(
 
     if flag_values.max_step is not None:
         trainer_config.max_step = flag_values.max_step
+
+    if flag_values.step_to_cal_avg_step_time is not None:
+        trainer_config.step_to_cal_avg_step_time = flag_values.step_to_cal_avg_step_time
 
     return trainer_config
 
