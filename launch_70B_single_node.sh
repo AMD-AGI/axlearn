@@ -19,19 +19,24 @@ export NVTE_CK_IS_V3_ATOMIC_FP32=0
 export NVTE_CK_IS_V3_SPEC=1
 export NVTE_CK_HOW_V3_BF16_CVT=2
  
+export STEP_TIMEOUT="${STEP_TIMEOUT:=360}"
+export MAX_STEP="${MAX_STEP:=3}"
+export NUM_LAYERS="${NUM_LAYERS:=5}"
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
 export MESH_DATA="${MESH_DATA:=1}"
 export MESH_EXPERT="${MESH_EXPERT:=1}"
 export MESH_FSDP="${MESH_FSDP:=-1}"
 export MESH_SEQ="${MESH_SEQ:=1}"
 export MESH_MODEL="${MESH_MODEL:=1}"
-export MAX_STEP="${MAX_STEP:=5}"
 
 mkdir -p /tmp/gpt_c4_test; \
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
+  --trainer_watchdog_timeout_seconds $STEP_TIMEOUT \
+  --max_step $MAX_STEP \
+  --num_layers $NUM_LAYERS\
   --mesh_selector="amd-mi300-single-node" \
   --mesh_pipeline $MESH_PIPELINE \
   --mesh_data $MESH_DATA \
@@ -39,5 +44,4 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_fsdp $MESH_FSDP \
   --mesh_seq $MESH_SEQ \
   --mesh_model $MESH_MODEL \
-  --max_step $MAX_STEP \
   &> output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.log
