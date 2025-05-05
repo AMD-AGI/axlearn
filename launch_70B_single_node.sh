@@ -31,7 +31,7 @@ export MESH_FSDP="${MESH_FSDP:=-1}"
 export MESH_SEQ="${MESH_SEQ:=1}"
 export MESH_MODEL="${MESH_MODEL:=1}"
 
-mkdir -p /tmp/gpt_c4_test; \
+mkdir -p /tmp/gpt_c4_test
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
