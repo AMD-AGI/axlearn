@@ -1,8 +1,8 @@
 export NCCL_IB_TC=41
 export NCCL_IB_SL=0
 # export NCCL_DEBUG=INFO
-# export NCCL_DEBUG_SUBSYS=NET # for NCCL debug, use COLL for collectives
-# export NCCL_DEBUG_FILE=llama3-70b-64N-short-run.%h.%p.log
+# export NCCL_DEBUG_SUBSYS=NET  # for NCCL debug, use COLL for collectives
+# export NCCL_DEBUG_FILE=llama3-70b.%h.%p.log
 export NCCL_CHECKS_DISABLE=1
 export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
 # export NCCL_IB_HCA=mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_4,mlx5_5,mlx5_8,mlx5_9
@@ -45,15 +45,15 @@ export STEP_TIMEOUT="${STEP_TIMEOUT:=3600}"
 export MAX_STEP="${MAX_STEP:=100}"
 export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=100}"
 export NUM_LAYERS="${NUM_LAYERS:=80}"
+export BATCH_SIZE="${BATCH_SIZE:=8}"
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
-export MESH_DATA="${MESH_DATA:=2}"
+export MESH_DATA="${MESH_DATA:=1}"
 export MESH_EXPERT="${MESH_EXPERT:=1}"
-export MESH_FSDP="${MESH_FSDP:=4}"
+export MESH_FSDP="${MESH_FSDP:=-1}"
 export MESH_SEQ="${MESH_SEQ:=1}"
-export MESH_MODEL="${MESH_MODEL:=2}"
+export MESH_MODEL="${MESH_MODEL:=1}"
 
-# XLA_FLAGS=--xla_dump_to=/tmp/xla_dump; \
-mkdir -p /tmp/gpt_c4_test; \
+mkdir -p /tmp/gpt_c4_test
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
@@ -61,7 +61,8 @@ python3 -m axlearn.common.launch_trainer_main \
   --trainer_watchdog_timeout_seconds $STEP_TIMEOUT \
   --max_step $MAX_STEP \
   --step_to_cal_avg_step_time $STEP_TO_CAL_AVG_STEP_TIME \
-  --num_layers $NUM_LAYERS\
+  --num_layers $NUM_LAYERS \
+  --batch_size $BATCH_SIZE \
   --mesh_selector="amd-mi300-single-node" \
   --mesh_pipeline $MESH_PIPELINE \
   --mesh_data $MESH_DATA \

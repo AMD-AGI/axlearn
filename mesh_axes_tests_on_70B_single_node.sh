@@ -4,7 +4,7 @@ bash launch_70B_single_node.sh
 # DP only (baseline)
 MESH_DATA=-1 MESH_FSDP=1 bash launch_70B_single_node.sh
 
-# DP/FSDP only (baseline)
+# DP/FSDP (baseline)
 MESH_DATA=2 MESH_FSDP=-1 bash launch_70B_single_node.sh
 
 # # PP + one axis

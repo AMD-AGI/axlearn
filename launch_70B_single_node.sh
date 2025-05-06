@@ -24,6 +24,7 @@ export STEP_TIMEOUT="${STEP_TIMEOUT:=360}"
 export MAX_STEP="${MAX_STEP:=10}"
 export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=10}"
 export NUM_LAYERS="${NUM_LAYERS:=5}"
+export BATCH_SIZE="${BATCH_SIZE:=8}"
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
 export MESH_DATA="${MESH_DATA:=1}"
 export MESH_EXPERT="${MESH_EXPERT:=1}"
@@ -39,7 +40,8 @@ python3 -m axlearn.common.launch_trainer_main \
   --trainer_watchdog_timeout_seconds $STEP_TIMEOUT \
   --max_step $MAX_STEP \
   --step_to_cal_avg_step_time $STEP_TO_CAL_AVG_STEP_TIME \
-  --num_layers $NUM_LAYERS\
+  --num_layers $NUM_LAYERS \
+  --batch_size $BATCH_SIZE \
   --mesh_selector="amd-mi300-single-node" \
   --mesh_pipeline $MESH_PIPELINE \
   --mesh_data $MESH_DATA \

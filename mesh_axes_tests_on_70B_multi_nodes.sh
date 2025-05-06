@@ -14,18 +14,20 @@ fi
 
 echo "SLURM_NNODES: $SLURM_NNODES, SLURM_NODEID: $SLURM_NODEID, HEAD_NODE: $HEAD_NODE"
 
-# baseline
-# error: mesh axes ('data', 'expert', 'fsdp') (of total size 16), but 16 does not evenly divide 8
-# MESH_DATA=2 MESH_FSDP=4 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=1 MESH_DATA=2 MESH_FSDP=2 MESH_SEQ=1 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
+# FSDP only (baseline)
+bash launch_70B_multi_nodes.sh
 
-# 3 axes (2/2/4)
-MESH_PIPELINE=2 MESH_DATA=2 MESH_FSDP=4 MESH_SEQ=1 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=2 MESH_DATA=2 MESH_FSDP=1 MESH_SEQ=4 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=2 MESH_DATA=2 MESH_FSDP=1 MESH_SEQ=1 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=2 MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=4 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=2 MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=1 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=2 MESH_DATA=1 MESH_FSDP=1 MESH_SEQ=2 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=1 MESH_DATA=2 MESH_FSDP=2 MESH_SEQ=4 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=1 MESH_DATA=2 MESH_FSDP=1 MESH_SEQ=2 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
-MESH_PIPELINE=1 MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=2 MESH_MODEL=4 bash launch_70B_multi_nodes.sh
+# DP/FSDP (baseline)
+MESH_DATA=$SLURM_NNODES bash launch_70B_multi_nodes.sh
+
+# 3 axes (SLURM_NNODES/2/-1) (<data>*<expert>*<fsdp> <= batch_size)
+MESH_PIPELINE=1 MESH_DATA=$SLURM_NNODES MESH_FSDP=2 MESH_SEQ=1 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
+MESH_PIPELINE=2 MESH_DATA=$SLURM_NNODES MESH_FSDP=-1 MESH_SEQ=1 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=2 MESH_DATA=$SLURM_NNODES MESH_FSDP=1 MESH_SEQ=-1 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=2 MESH_DATA=$SLURM_NNODES MESH_FSDP=1 MESH_SEQ=1 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=$SLURM_NNODES MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=-1 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=$SLURM_NNODES MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=1 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=$SLURM_NNODES MESH_DATA=1 MESH_FSDP=1 MESH_SEQ=2 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
+MESH_PIPELINE=1 MESH_DATA=$SLURM_NNODES MESH_FSDP=2 MESH_SEQ=-1 MESH_MODEL=1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=1 MESH_DATA=$SLURM_NNODES MESH_FSDP=1 MESH_SEQ=2 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
+# MESH_PIPELINE=1 MESH_DATA=1 MESH_FSDP=2 MESH_SEQ=2 MESH_MODEL=-1 bash launch_70B_multi_nodes.sh
