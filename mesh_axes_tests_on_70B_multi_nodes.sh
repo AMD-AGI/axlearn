@@ -1,15 +1,15 @@
 #!/bin/bash
 
 if [[ -z "$SLURM_NNODES" ]]; then
-    echo "SLURM_NNODES is unknown. Please set SLURM_NNODES."    
+    echo "SLURM_NNODES is unknown. Please set SLURM_NNODES."
 fi
 
 if [[ -z "$SLURM_NODEID" ]]; then
-    echo "SLURM_NODEID is unknown. Please set SLURM_NODEID."    
+    echo "SLURM_NODEID is unknown. Please set SLURM_NODEID."
 fi
 
 if [[ -z "$HEAD_NODE" ]]; then
-    echo "HEAD_NODE is unknown. Please set HEAD_NODE."    
+    echo "HEAD_NODE is unknown. Please set HEAD_NODE."
 fi
 
 echo "SLURM_NNODES: $SLURM_NNODES, SLURM_NODEID: $SLURM_NODEID, HEAD_NODE: $HEAD_NODE"

@@ -60,7 +60,9 @@ from axlearn.experiments.text.gpt.common import (
     mesh_shape_from_axes,
 )
 from axlearn.experiments.text.gpt.common import model_config as common_model_config
-from axlearn.experiments.text.gpt.common import scaled_hidden_dim
+from axlearn.experiments.text.gpt.common import (
+    scaled_hidden_dim,
+)
 from axlearn.experiments.trainer_config_utils import TrainerConfigFn, V6eFlashConfigModifier
 
 MODEL_SIZES = ("test", "1B", "3B", "7B", "8B", "70B")
@@ -718,7 +720,7 @@ def get_trainer_kwargs(
                                 remat_policies={
                                     "model.decoder.transformer.layer": RematSpec(
                                         prevent_cse=False,
-                                        policy=jax_remat_policies.nothing_saveable
+                                        policy=jax_remat_policies.nothing_saveable,
                                     ),
                                 }
                             ),
