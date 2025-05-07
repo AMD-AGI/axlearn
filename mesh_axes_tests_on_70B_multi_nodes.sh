@@ -12,7 +12,7 @@ if [[ -z "$HEAD_NODE" ]]; then
     echo "HEAD_NODE is unknown. Please set HEAD_NODE."
 fi
 
-echo "SLURM_NNODES: $SLURM_NNODES, SLURM_NODEID: $SLURM_NODEID, HEAD_NODE: $HEAD_NODE"
+echo "hostname: $(hostname) SLURM_NNODES: $SLURM_NNODES, SLURM_NODEID: $SLURM_NODEID, HEAD_NODE: $HEAD_NODE"
 
 # FSDP only (baseline)
 bash launch_70B_multi_nodes.sh
