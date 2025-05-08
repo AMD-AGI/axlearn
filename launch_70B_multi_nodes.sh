@@ -13,7 +13,8 @@ export NCCL_PROTO=Simple
 export RCCL_MSCCL_ENABLE=0
 
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
+# export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=False"
+export XLA_FLAGS="--xla_gpu_enable_triton_gemm=False --xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=TRUE --xla_gpu_all_gather_combine_threshold_bytes=8589934592 --xla_gpu_enable_all_gather_combine_by_dim=FALSE --xla_gpu_memory_limit_slop_factor=95"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2

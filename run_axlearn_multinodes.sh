@@ -35,6 +35,9 @@ docker exec \
     -e WORKDIR=$WORKDIR \
     $SLURM_JOB_NAME \
     bash -c '
+        sudo apt install iproute2 -y
+        sudo apt install -y linux-headers-"$(uname -r)" libelf-dev
+        sudo apt install -y gcc make libtool autoconf librdmacm-dev rdmacm-utils infiniband-diags ibverbs-utils perftest ethtool libibverbs-dev rdma-core strace libibmad5 libibnetdisc5 ibverbs-providers libibumad-dev libibumad3 libibverbs1 libnl-3-dev libnl-route-3-dev
         cd $WORKDIR
         pip install ".[core]"
         bash mesh_axes_tests_on_70B_multi_nodes.sh
