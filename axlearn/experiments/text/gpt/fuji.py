@@ -687,7 +687,7 @@ def get_trainer_kwargs(
                             RematSpecModifier.default_config().set(
                                 remat_policies={
                                     "model.decoder.transformer.layer": RematSpec(
-                                        prevent_cse=True,
+                                        prevent_cse=False,
                                         policy=config_for_function(
                                             save_and_offload_only_these_names_regex
                                         ).set(
@@ -719,7 +719,7 @@ def get_trainer_kwargs(
                             RematSpecModifier.default_config().set(
                                 remat_policies={
                                     "model.decoder.transformer.layer": RematSpec(
-                                        prevent_cse=True,
+                                        prevent_cse=False,
                                         policy=jax_remat_policies.nothing_saveable,
                                     ),
                                 }

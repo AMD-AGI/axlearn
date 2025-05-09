@@ -1,20 +1,18 @@
-export NCCL_IB_TC=41
-export NCCL_IB_SL=0
 # export NCCL_DEBUG=INFO
 # export NCCL_DEBUG_SUBSYS=NET  # for NCCL debug, use COLL for collectives
 # export NCCL_DEBUG_FILE=llama3-70b.%h.%p.log
+export NCCL_IB_TC=41
+export NCCL_IB_SL=0
 export NCCL_CHECKS_DISABLE=1
 export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
 # export NCCL_IB_HCA=mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_4,mlx5_5,mlx5_8,mlx5_9
-export NCCL_SOCKET_IFNAME=ens51np0
+# export NCCL_SOCKET_IFNAME=ens51np0
 export NCCL_IB_GID_INDEX=3
 export NCCL_CROSS_NIC=0
 export NCCL_PROTO=Simple
-export RCCL_MSCCL_ENABLE=0
 
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-# export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=False"
-export XLA_FLAGS="--xla_gpu_enable_triton_gemm=False --xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=TRUE --xla_gpu_all_gather_combine_threshold_bytes=8589934592 --xla_gpu_enable_all_gather_combine_by_dim=FALSE --xla_gpu_memory_limit_slop_factor=95"
+export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2
@@ -83,4 +81,4 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_dcn_fsdp $MESH_DCN_FSDP \
   --mesh_dcn_seq $MESH_DCN_SEQ \
   --mesh_dcn_model $MESH_DCN_MODEL \
-  &> ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.${PROCESS_ID}.log
+  &> ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}_dcn-p${MESH_DCN_PIPELINE}_dcn-d${MESH_DCN_DATA}_dcn-e${MESH_DCN_EXPERT}_dcn-f${MESH_DCN_FSDP}_dcn-s${MESH_DCN_SEQ}_dcn-m${MESH_DCN_MODEL}.${PROCESS_ID}.log
