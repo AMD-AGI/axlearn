@@ -10,6 +10,9 @@ export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
 export NCCL_IB_GID_INDEX=3
 export NCCL_CROSS_NIC=0
 export NCCL_PROTO=Simple
+export NCCL_DEBUG=WARN
+# avoid data corruption/mismatch issue that existed in past releases
+export RCCL_MSCCL_ENABLE=0
 
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
 export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
@@ -57,11 +60,19 @@ export MESH_DCN_FSDP="${MESH_DCN_FSDP:=1}"
 export MESH_DCN_SEQ="${MESH_DCN_SEQ:=1}"
 export MESH_DCN_MODEL="${MESH_DCN_MODEL:=1}"
 
-mkdir -p /tmp/gpt_c4_test
-mkdir -p $LOG_OUTPUT_FOLDER
+if [[ -z "$1" ]]; then
+    echo "Please provide a timestamp in the first argument" >&2
+fi
+
+TIMESTAMP=$1
+
+run_name=output_${TIMESTAMP}_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}_dcn-p${MESH_DCN_PIPELINE}_dcn-d${MESH_DCN_DATA}_dcn-e${MESH_DCN_EXPERT}_dcn-f${MESH_DCN_FSDP}_dcn-s${MESH_DCN_SEQ}_dcn-m${MESH_DCN_MODEL}
+mkdir -p ${LOG_OUTPUT_FOLDER}/${run_name}
+
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
-  --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
+  --trainer_dir="${LOG_OUTPUT_FOLDER}/${run_name}" --data_dir=gs://axlearn-public/tensorflow_datasets \
+  --trace_at_steps=0 \
   --jax_backend=gpu \
   --trainer_watchdog_timeout_seconds $STEP_TIMEOUT \
   --max_step $MAX_STEP \
@@ -81,4 +92,4 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_dcn_fsdp $MESH_DCN_FSDP \
   --mesh_dcn_seq $MESH_DCN_SEQ \
   --mesh_dcn_model $MESH_DCN_MODEL \
-  &> ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}_dcn-p${MESH_DCN_PIPELINE}_dcn-d${MESH_DCN_DATA}_dcn-e${MESH_DCN_EXPERT}_dcn-f${MESH_DCN_FSDP}_dcn-s${MESH_DCN_SEQ}_dcn-m${MESH_DCN_MODEL}.${PROCESS_ID}.log
+  &> ${LOG_OUTPUT_FOLDER}/${run_name}/${PROCESS_ID}.log
