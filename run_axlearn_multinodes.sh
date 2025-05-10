@@ -2,7 +2,9 @@
 
 # How to run?
 # In Slurm interactive mode, under Axlearn repo's root: srun --ntasks=4 bash -c 'SLRUM_JOB_NAME=axlearn bash run_axlearn_multinodes.sh'
-TIMESTAMP=$(date +%s)
+
+START_TIME=$(scontrol show job $SLURM_JOB_ID | grep -oP 'StartTime=\K\S+')
+START_TIME=$(echo "$START_TIME" | sed 's/T/-/; s/:/-/g')
 
 WORKDIR="${WORKDIR:=$(pwd)}"
 IMAGE_NAME="${IMAGE_NAME:=rocm/jax-training:maxtext-v25.5}"
@@ -35,7 +37,7 @@ docker exec \
     -e HEAD_NODE=$HEAD_NODE \
     -e BATCH_SIZE=$BATCH_SIZE \
     -e LOG_OUTPUT_FOLDER=nodes-4-bs-8-trace-at-0 \
-    -e TIMESTAMP=$TIMESTAMP \
+    -e TIMESTAMP=$START_TIME \
     -w $WORKDIR \
     $SLURM_JOB_NAME \
     bash -c '
