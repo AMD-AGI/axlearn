@@ -14,20 +14,21 @@ fi
 
 if [[ -z "$HEAD_NODE" ]]; then
     export HEAD_NODE=${nodes[0]}
+    # export HEAD_NODE=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 
     echo "Set HEAD_NODE"
 fi
 
 if [[ -z "$SLURM_NODEID" ]]; then
     for i in "${!nodes[@]}"; do
-        [[ "${nodes[$i]}" == "${hostname}" ]] && export SLURM_NODEID=$i
+	[[ "${nodes[$i]}" == "$(hostname)" ]] && export SLURM_NODEID=$i
     done
 
     echo "Set SLURM_NODEID"
 fi
 
-echo "Hostname: $(hostname)"
-echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
-echo "SLURM_NNODES: $SLURM_NNODES"
-echo "SLURM_NODEID: $SLURM_NODEID"
-echo "HEAD_NODE: $HEAD_NODE"
+echo "hostname=$(hostname)"
+echo "SLURM_JOB_NODELIST=$SLURM_JOB_NODELIST"
+echo "SLURM_NNODES=$SLURM_NNODES"
+echo "SLURM_NODEID=$SLURM_NODEID"
+echo "HEAD_NODE=$HEAD_NODE"

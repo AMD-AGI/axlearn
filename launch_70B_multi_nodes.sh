@@ -10,12 +10,18 @@ export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
 export NCCL_IB_GID_INDEX=3
 export NCCL_CROSS_NIC=0
 export NCCL_PROTO=Simple
-export NCCL_DEBUG=WARN
+export NCCL_DEBUG=INFO
 # avoid data corruption/mismatch issue that existed in past releases
-export RCCL_MSCCL_ENABLE=0
+# export RCCL_MSCCL_ENABLE=0
+# export RCCL_MSCCL_FORCE_ENABLE=1
+# export RCCL_MSCCL_ENABLE_SINGLE_PROCESS=1
+# export RCCL_MSCCLPP_ENABLE=1
 
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
+# "--xla_gpu_enable_pipelined_all_gather=true --xla_gpu_enable_pipelined_reduce_scatter=true --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE"
+# export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
+
+export XLA_FLAGS="--xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2
@@ -35,7 +41,7 @@ export NVTE_CK_IS_V3_ATOMIC_FP32=0
 export NVTE_CK_IS_V3_SPEC=1
 export NVTE_CK_HOW_V3_BF16_CVT=2
 
-export TF_COORDINATION_SERVICE_BARRIER_TIMEOUT_SECONDS=300
+# export TF_COORDINATION_SERVICE_BARRIER_TIMEOUT_SECONDS=300
 export NUM_PROCESSES="${NUM_PROCESSES:=$SLURM_NNODES}"
 export PROCESS_ID="${PROCESS_ID:=$SLURM_NODEID}"
 export HEAD_NODE=$HEAD_NODE

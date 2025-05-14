@@ -8,25 +8,29 @@ START_TIME=$(echo "$START_TIME" | sed 's/T/-/; s/:/-/g')
 
 WORKDIR="${WORKDIR:=$(pwd)}"
 IMAGE_NAME="${IMAGE_NAME:=rocm/jax-training:maxtext-v25.5}"
+# IMAGE_NAME="${IMAGE_NAME:=rocm/jax-private:rocm6.3.1-jax0.4.35-py3.10.15_cs}"
 
 source set_slurm_multinodes_parameters_if_missing.sh
 SLURM_JOB_NAME="${SLURM_JOB_NAME:=axlearn-eval}"
-BATCH_SIZE="${BATCH_SIZE:=$((SLURM_NNODES*8))}"
+BATCH_SZIE_BASE="${BATCH_SZIE_BASE:=16}"
+BATCH_SIZE="${BATCH_SIZE:=$((SLURM_NNODES*BATCH_SZIE_BASE))}"
 
 
 docker rm -f $SLURM_JOB_NAME | true
 
 docker run -dit \
-    --device /dev/dri --device /dev/kfd \
-    --network host --ipc host --group-add video \
-    --cap-add SYS_PTRACE --security-opt seccomp=unconfined --privileged \
-    --cap-add=IPC_LOCK \
-    --shm-size 128G \
-    -e HF_HOME=/hf_cache \
-    --volume /dev/infiniband:/dev/infiniband \
+    --ipc=host \
+    --cap-add=SYS_PTRACE \
+    --network=host \
+    --device=/dev/kfd \
+    --device=/dev/dri \
+    --security-opt seccomp=unconfined \
+    --group-add video \
+    --privileged \
     -v /home/amd-shared-home/.cache/huggingface:/hf_cache \
     -v $HOME/.ssh:/root/.ssh \
     -v $HOME:$HOME \
+    -e HF_HOME=/hf_cache \
     --name $SLURM_JOB_NAME \
     $IMAGE_NAME > /dev/null
 
@@ -35,15 +39,14 @@ docker exec \
     -e SLURM_NODEID=$SLURM_NODEID \
     -e SLURM_JOB_NODELIST=$SLURM_JOB_NODELIST \
     -e HEAD_NODE=$HEAD_NODE \
-    -e BATCH_SIZE=$BATCH_SIZE \
-    -e LOG_OUTPUT_FOLDER=nodes-4-bs-8-trace-at-0 \
     -e TIMESTAMP=$START_TIME \
+    -e BATCH_SIZE=$BATCH_SIZE \
+    -e LOG_OUTPUT_FOLDER="nodes-${SLURM_NNODES}-bs-${BATCH_SIZE}-with-driver" \
     -w $WORKDIR \
     $SLURM_JOB_NAME \
     bash -c '
-        sudo apt install iproute2 -y
-        sudo apt install -y linux-headers-"$(uname -r)" libelf-dev
-        sudo apt install -y gcc make libtool autoconf librdmacm-dev rdmacm-utils infiniband-diags ibverbs-utils perftest ethtool libibverbs-dev rdma-core strace libibmad5 libibnetdisc5 ibverbs-providers libibumad-dev libibumad3 libibverbs1 libnl-3-dev libnl-route-3-dev
+        bash install_broadcomm_rdma.sh
         pip install -e ".[core]"
+        # pip install einops  # rocm/jax-private:rocm6.3.1-jax0.4.35-py3.10.15_cs
         bash mesh_axes_tests_on_70B_multi_nodes.sh
     '
