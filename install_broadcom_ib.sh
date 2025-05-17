@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# We want to install the broadcom drivers
+WORKDIR=/tmp/install_broadcom_ib
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -12,8 +12,7 @@ apt install -y gcc make libtool autoconf librdmacm-dev rdmacm-utils infiniband-d
 
 
 echo -e "\n\n============Compiling RoCE Lib now============\n\n"
-mkdir -p /tmp/bc_install
-cd /tmp/bc_install
+mkdir -p $WORKDIR && cd $WORKDIR
 
 # Highlighted item will change depending on the release
 rm -rf bcm5760x_230.2.52.0a
@@ -34,4 +33,17 @@ find . -name "*.so" -exec md5sum {} \;
 BUILT_MD5SUM=$(find . -name "libbnxt_re-rdmav*.so" -exec md5sum {} \; | cut -d " " -f 1)
 echo -e "\n\nmd5sum of the built libbnxt_re is $BUILT_MD5SUM"
 echo -e "\n\n===================RoCE userlib compile complete===================\n\n"
-#!/bin/bash
+
+# echo InfiniBand Info
+echo "ibstat"
+ibstat
+echo "ibv_devices"
+ibv_devices
+echo "ls -l /sys/class/infiniband/"
+ls -l /sys/class/infiniband/        
+echo "ip addr"
+ip addr
+
+# clean up
+rm -rf $WORKDIR
+apt clean

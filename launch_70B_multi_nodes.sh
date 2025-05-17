@@ -1,27 +1,29 @@
-# export NCCL_DEBUG=INFO
+export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
+export NCCL_DEBUG=INFO
 # export NCCL_DEBUG_SUBSYS=NET  # for NCCL debug, use COLL for collectives
 # export NCCL_DEBUG_FILE=llama3-70b.%h.%p.log
 export NCCL_IB_TC=41
 export NCCL_IB_SL=0
 export NCCL_CHECKS_DISABLE=1
-export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
-# export NCCL_IB_HCA=mlx5_0,mlx5_1,mlx5_2,mlx5_3,mlx5_4,mlx5_5,mlx5_8,mlx5_9
-# export NCCL_SOCKET_IFNAME=ens51np0
-export NCCL_IB_GID_INDEX=3
-export NCCL_CROSS_NIC=0
 export NCCL_PROTO=Simple
-export NCCL_DEBUG=INFO
-# avoid data corruption/mismatch issue that existed in past releases
-# export RCCL_MSCCL_ENABLE=0
-# export RCCL_MSCCL_FORCE_ENABLE=1
-# export RCCL_MSCCL_ENABLE_SINGLE_PROCESS=1
-# export RCCL_MSCCLPP_ENABLE=1
+export NCCL_CROSS_NIC=0
+# check available NCCL_IB_HCA: lspci
+# export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
+export NCCL_IB_HCA=mlx5_ib0,mlx5_ib1,mlx5_ib2,mlx5_ib3,mlx5_ib4,mlx5_ib5,mlx5_ib6,mlx5_ib7
+# check available NCCL_SOCKET_IFNAME: ifconfig / ip addr 
+# export NCCL_SOCKET_IFNAME=ens51np0
+export NCCL_SOCKET_IFNAME=ib0
+export NCCL_IB_GID_INDEX=3
 
-export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-# "--xla_gpu_enable_pipelined_all_gather=true --xla_gpu_enable_pipelined_reduce_scatter=true --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE"
+# --xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE"
 # export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
+# --xla_gpu_enable_pipelined_all_gather=true --xla_gpu_enable_pipelined_reduce_scatter=true
+# --xla_disable_all_hlo_passes=true
+# --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472
+# --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592 --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false
+export XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
+echo "XLA_FLAGS: ${XLA_FLAGS}"
 
-export XLA_FLAGS="--xla_gpu_enable_reduce_scatter_combine_by_dim=false --xla_gpu_reduce_scatter_combine_threshold_bytes=8589934592 --xla_gpu_all_reduce_combine_threshold_bytes=8589934592  --xla_gpu_all_gather_combine_threshold_bytes=137438953472 --xla_gpu_enable_all_gather_combine_by_dim=FALSE --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2

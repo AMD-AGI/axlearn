@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# How to run?
-# In Slurm interactive mode, under Axlearn repo's root: srun --ntasks=4 bash -c 'SLRUM_JOB_NAME=axlearn bash run_axlearn_multinodes.sh'
+# How to run? (under Axlearn repo's root)
+# In Slurm interactive mode: srun --ntasks=4 bash -c 'SLRUM_JOB_NAME=axlearn bash run_axlearn_multinodes.sh'
+# For sbatch: sbatch sbatch_job.sh "<flags-if-any> bash run_axlearn_multinodes.sh"
 
 START_TIME=$(scontrol show job $SLURM_JOB_ID | grep -oP 'StartTime=\K\S+')
 START_TIME=$(echo "$START_TIME" | sed 's/T/-/; s/:/-/g')
@@ -14,20 +15,22 @@ source set_slurm_multinodes_parameters_if_missing.sh
 SLURM_JOB_NAME="${SLURM_JOB_NAME:=axlearn-eval}"
 BATCH_SZIE_BASE="${BATCH_SZIE_BASE:=16}"
 BATCH_SIZE="${BATCH_SIZE:=$((SLURM_NNODES*BATCH_SZIE_BASE))}"
+XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
+LOG_OUTPUT_FOLDER_SUFFIX=""
 
-
-docker rm -f $SLURM_JOB_NAME | true
+docker rm -f $SLURM_JOB_NAME || true
 
 docker run -dit \
     --ipc=host \
-    --cap-add=SYS_PTRACE \
     --network=host \
     --device=/dev/kfd \
     --device=/dev/dri \
+    --cap-add=IPC_LOCK \
+    --volume /dev/infiniband:/dev/infiniband \
+    --tmpfs /dev/shm:size=200G \
     --security-opt seccomp=unconfined \
     --group-add video \
     --privileged \
-    -v /home/amd-shared-home/.cache/huggingface:/hf_cache \
     -v $HOME/.ssh:/root/.ssh \
     -v $HOME:$HOME \
     -e HF_HOME=/hf_cache \
@@ -41,12 +44,13 @@ docker exec \
     -e HEAD_NODE=$HEAD_NODE \
     -e TIMESTAMP=$START_TIME \
     -e BATCH_SIZE=$BATCH_SIZE \
-    -e LOG_OUTPUT_FOLDER="nodes-${SLURM_NNODES}-bs-${BATCH_SIZE}-with-driver" \
+    -e XLA_FLAGS="$XLA_FLAGS" \
+    -e LOG_OUTPUT_FOLDER="nodes-${SLURM_NNODES}-bs-${BATCH_SIZE}-${LOG_OUTPUT_FOLDER_SUFFIX}" \
     -w $WORKDIR \
     $SLURM_JOB_NAME \
     bash -c '
-        bash install_broadcomm_rdma.sh
-        pip install -e ".[core]"
-        # pip install einops  # rocm/jax-private:rocm6.3.1-jax0.4.35-py3.10.15_cs
+        lspci | grep 'Broadcom.*NetXtreme-E' && echo "Found Broadcom card. Installing Broadcom InfiniBand driver" && bash install_broadcomm_rdma.sh
+        lspci | grep 'Mellanox.*ConnectX' && echo "Found Mellanox card. Installing Mellanox InfiniBand driver" && bash install_mellanox_ib.sh
+        pip install -q -e ".[core]"
         bash mesh_axes_tests_on_70B_multi_nodes.sh
     '
