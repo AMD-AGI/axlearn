@@ -16,6 +16,12 @@ from axlearn.common.flash_attention.tpu_attention import tpu_flash_attention
 from axlearn.common.utils import Tensor
 from jax.experimental.pallas.ops.gpu import attention
 
+from jax.experimental.pallas.ops.gpu.attention import mha as pallas_mha
+
+from axlearn.common.flash_attention.gpu_attention_pallas_cj import (
+    mha as pallas_mha,
+)
+
 @functools.partial(jax.jit, static_argnames=["causal", "softmax_scale"])
 @jax.default_matmul_precision("bfloat16")
 def mha_reference(
@@ -119,8 +125,9 @@ def flash_attention_implementation(
                 or bias is not None
                 or jnp.float32 in (query.dtype, key.dtype, value.dtype)
             ):
-                logging.warning("Flash attention falling back to Triton GPU kernel.")
-                return attention.mha(
+                logging.warning("cj401-a Flash attention falling back to Triton GPU kernel.")
+                
+                return pallas_mha(
                     query,
                     key,
                     value,
@@ -148,31 +155,36 @@ def flash_attention_implementation(
                 # )
 
             else:
-                logging.warning("Flash attention falling back to Triton GPU kernel.")
+                logging.warning("cj401-b Flash attention falling back to Triton GPU kernel.")
                 print(query.shape)
-
-                # return gpu_flash_attention(
-                #     query,
-                #     key,
-                #     value,
-                #     bias=bias,
-                #     segment_ids=segment_ids,
-                #     softmax_scale=softmax_scale,
-                #     causal=causal,
-                #     num_warps=2, 
-                #     num_stages=1, 
-                #     block_k=32, 
-                #     block_q=32,
-                # )
-
-                return attention.mha(
+                """
+                return gpu_flash_attention(
+                     query,
+                     key,
+                     value,
+                     bias=bias,
+                     segment_ids=segment_ids,
+                     softmax_scale=softmax_scale,
+                     causal=causal,
+                     num_warps=2, 
+                     num_stages=1, 
+                     block_k=32, 
+                     block_q=32,
+                )
+                """
+                 
+                return pallas_mha(
                     query,
                     key,
                     value,
-                    num_warps=2, 
-                    num_stages=1, 
-                    block_k=32, 
-                    block_q=32,
+                    # num_warps=2, 
+                    # num_stages=1, 
+                    # block_k=32, 
+                    # block_q=32,
+                    num_warps=4,
+                    num_stages=1,
+                    block_k=16,
+                    block_q=16,
                     segment_ids=segment_ids,
                     sm_scale=softmax_scale,
                     causal=causal,

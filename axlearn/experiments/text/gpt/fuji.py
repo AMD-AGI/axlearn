@@ -372,7 +372,8 @@ def get_trainer_kwargs(
     elif model_size == "70B":
         trainer_kwargs = dict(
             model_kwargs=dict(
-                num_layers=80,
+                # num_layers=80,
+                num_layers=30,
                 hidden_dim=128 * 64,
                 num_heads=64,
                 # No GQA support in V1 models, so num_kv_heads is the same as num_heads.
@@ -602,6 +603,7 @@ def trainer_configs(
                 # The original config was supposed to run on >= 32 machines.
                 # cfg.input.batcher.global_batch_size //= 32
                 cfg.input.batcher.global_batch_size = 16
+                # cfg.input.batcher.global_batch_size = 8
                 for evaler in cfg.evalers.values():
                     evaler.input.batcher.global_batch_size //= 32
                 return cfg

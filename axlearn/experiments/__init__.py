@@ -45,6 +45,7 @@ def get_named_trainer_config(config_name: str, *, config_module: str) -> Trainer
         return config_map[config_name]
     except KeyError as e:
         similar = similar_names(config_name, set(config_map.keys()))
+        logging.info(f"cj401 {config_map = } {similar = }")
         if similar:
             message = f"Unrecognized config {config_name}; did you mean [{', '.join(similar)}]"
         else:

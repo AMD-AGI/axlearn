@@ -13,6 +13,7 @@ def main(_):
     launch.setup()
     trainer_config = launch_trainer.get_trainer_config()
     trainer_config.set(recorder=config_for_function(lambda: measurement.global_recorder))
+    print(f"cj401 Launching trainer with config:\n%s", trainer_config)
     launch_trainer.run_trainer(trainer_config)
 
 

@@ -77,6 +77,8 @@ def get_trainer_config(
     *,
     flag_values: flags.FlagValues = FLAGS,
 ) -> SpmdTrainer.Config:
+    logging.info("cj401 Loading trainer config from %s", flag_values.config)
+    logging.info(f"cj401 {trainer_config_fn = }")
     if trainer_config_fn is None:
         # Attempt a direct import. This is a common case for launching from pip package.
         try:
@@ -94,12 +96,16 @@ def get_trainer_config(
             trainer_config_fn = None
 
     if trainer_config_fn is None:
+        logging.info(f"cj401 {flag_values.config = } {flag_values.config_module = }")
         trainer_config_fn = get_named_trainer_config(
             flag_values.config,
             config_module=f"axlearn.experiments.{flag_values.config_module}",
         )
     trainer_config: SpmdTrainer.Config = trainer_config_fn()
     trainer_config.dir = trainer_config.dir or flag_values.trainer_dir
+    logging.info(f"cj401 {trainer_config = }")
+    
+    # sys.exit(-1)
     if flag_values.mesh_selector is not None:
         select_mesh_config(trainer_config, mesh_selector=flag_values.mesh_selector)
     trainer_config.mesh_axis_names = trainer_config.mesh_axis_names or ("data", "model")
@@ -116,6 +122,8 @@ def get_trainer_config(
         from axlearn.cloud.gcp.monitoring.tpu_device_monitor import create_tpu_monitor
 
         trainer_config.device_monitor = create_tpu_monitor()
+    trainer_config.max_step = 510
+    # trainer_config.summary_writer.write_every_n_steps = 1
     return trainer_config
 
 
