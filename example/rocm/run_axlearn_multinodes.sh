@@ -8,10 +8,11 @@ START_TIME=$(scontrol show job $SLURM_JOB_ID | grep -oP 'StartTime=\K\S+')
 START_TIME=$(echo "$START_TIME" | sed 's/T/-/; s/:/-/g')
 
 WORKDIR="${WORKDIR:=$(pwd)}"
+EXAMPLE_DIR="${WORKDIR}/example/rocm"
 IMAGE_NAME="${IMAGE_NAME:=rocm/jax-training:maxtext-v25.5}"
 # IMAGE_NAME="${IMAGE_NAME:=rocm/jax-private:rocm6.3.1-jax0.4.35-py3.10.15_cs}"
 
-source set_slurm_multinodes_parameters_if_missing.sh
+source ${EXAMPLE_DIR}/set_slurm_multinodes_parameters_if_missing.sh
 SLURM_JOB_NAME="${SLURM_JOB_NAME:=axlearn-eval}"
 BATCH_SZIE_BASE="${BATCH_SZIE_BASE:=16}"
 BATCH_SIZE="${BATCH_SIZE:=$((SLURM_NNODES*BATCH_SZIE_BASE))}"
@@ -38,6 +39,13 @@ docker run -dit \
     $IMAGE_NAME > /dev/null
 
 docker exec \
+    -w $WORKDIR \
+    $SLURM_JOB_NAME \
+    bash -c '
+        pip install -q -e ".[core]"
+    '
+
+docker exec \
     -e SLURM_NNODES=$SLURM_NNODES \
     -e SLURM_NODEID=$SLURM_NODEID \
     -e SLURM_JOB_NODELIST=$SLURM_JOB_NODELIST \
@@ -46,11 +54,11 @@ docker exec \
     -e BATCH_SIZE=$BATCH_SIZE \
     -e XLA_FLAGS="$XLA_FLAGS" \
     -e LOG_OUTPUT_FOLDER="nodes-${SLURM_NNODES}-bs-${BATCH_SIZE}-${LOG_OUTPUT_FOLDER_SUFFIX}" \
-    -w $WORKDIR \
+    -w $EXAMPLE_DIR \
     $SLURM_JOB_NAME \
     bash -c '
-        lspci | grep 'Broadcom.*NetXtreme-E' && echo "Found Broadcom card. Installing Broadcom InfiniBand driver" && bash install_broadcomm_rdma.sh
+        lspci | grep 'Broadcom.*NetXtreme-E' && echo "Found Broadcom card. Installing Broadcom InfiniBand driver" && bash install_broadcom_ib.sh
         lspci | grep 'Mellanox.*ConnectX' && echo "Found Mellanox card. Installing Mellanox InfiniBand driver" && bash install_mellanox_ib.sh
-        pip install -q -e ".[core]"
+        # pip install -q -e ".[core]"
         bash mesh_axes_tests_on_70B_multi_nodes.sh
     '
