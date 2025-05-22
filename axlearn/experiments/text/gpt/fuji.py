@@ -587,7 +587,7 @@ def get_trainer_kwargs(
     elif model_size == "70B":
         trainer_kwargs = dict(
             model_kwargs=dict(
-                num_layers=80,
+                num_layers=30,
                 hidden_dim=128 * 64,
                 num_heads=64,
                 # No GQA support in V1 models, so num_kv_heads is the same as num_heads.
@@ -901,11 +901,11 @@ def trainer_configs(
                 # The original config was supposed to run on >= 32 machines.
                 # pylint: disable=cell-var-from-loop
                 cfg.input.input_dispatcher.global_logical_batch_size //= (
-                    128 if version in (Version.V3, Version.V3_TIKTOKEN) else 32
+                    128 if version in (Version.V3, Version.V3_TIKTOKEN) else 16
                 )
                 for evaler in cfg.evalers.values():
                     evaler.input.input_dispatcher.global_logical_batch_size //= (
-                        128 if version in (Version.V3, Version.V3_TIKTOKEN) else 32
+                        128 if version in (Version.V3, Version.V3_TIKTOKEN) else 16
                     )
                 # pylint: enable=cell-var-from-loop
                 return cfg
