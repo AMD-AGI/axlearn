@@ -11,6 +11,8 @@ from absl import logging
 from axlearn.common.attention import NEG_INF, MaskFn, causal_mask, softmax_with_biases
 from axlearn.common.flash_attention.gpu_attention import cudnn_dot_product_attention
 from axlearn.common.flash_attention.gpu_attention import flash_attention as gpu_flash_attention
+from axlearn.common.flash_attention.gpu_attention_pallas_cj import mha as mha_cj
+from axlearn.common.flash_attention.gpu_attention_pallas_fav2 import flash_attention as gpu_flash_attention_v2
 from axlearn.common.flash_attention.tpu_attention import tpu_flash_attention
 from axlearn.common.utils import Tensor
 
@@ -130,7 +132,7 @@ def flash_attention_implementation(
                 )
             else:
                 logging.warning("Flash attention falling back to Triton GPU kernel.")
-                return gpu_flash_attention(
+                return gpu_flash_attention_v2(
                     query,
                     key,
                     value,
@@ -139,6 +141,18 @@ def flash_attention_implementation(
                     softmax_scale=softmax_scale,
                     causal=causal,
                 )
+                # return mha_cj(
+                #     query,
+                #     key,
+                #     value,
+                #     num_warps=2, 
+                #     num_stages=1, 
+                #     block_k=32, 
+                #     block_q=32,
+                #     segment_ids=segment_ids,
+                #     sm_scale=softmax_scale,
+                #     causal=causal,
+                # )
                 # return cudnn_dot_product_attention(
                 #     query,
                 #     key,

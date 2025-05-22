@@ -31,5 +31,5 @@ python3 -m axlearn.common.launch_trainer_main \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
   --mesh_selector="gpu-remat-test" \
-  --trainer_dir="/home/mingyyan/single-node-3B/"  \
-  --trace_at_steps=0,3,6 
+  # --trainer_dir="/home/mingyyan/single-node-3B/"  \
+  # --trace_at_steps=0,3,6 
