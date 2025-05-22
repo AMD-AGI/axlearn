@@ -739,6 +739,7 @@ def _mha_backward(
     ############################################
     # num_warps = 8
     num_warps = 2
+    num_stages = 1
     ############################################
     if num_stages is None:
         num_stages = 2 if bias is None and jnp.float32 not in (q.dtype, k.dtype, v.dtype) else 1

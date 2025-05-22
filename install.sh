@@ -2,7 +2,7 @@
 export JAX_BRANCH=rocm-jaxlib-v0.5.0-waves_per_eu-2
 export XLA_BRANCH=rocm-jaxlib-v0.5.0-waves_per_eu
 #export XLA_BRANCH=rocm-jaxlib-v0.5.0_aiss_ws64
-export ROCM_VERSION=6.3.1
+export ROCM_VERSION=6.3.4
 export PATH=/opt/rocm-$ROCM_VERSION/bin:/opt/rocm-$ROCM_VERSION/lib/llvm/bin:$PATH
 export ROCM_PATH=/opt/rocm-$ROCM_VERSION
 export HIP_PATH=/opt/rocm-$ROCM_VERSION

@@ -191,7 +191,7 @@ def mha(
   num_warps_ = num_warps
   num_stages = 1
     
-  block_q = 16
+  block_q = 32
   block_k = 32
   
   if num_warps_ is None:
@@ -257,7 +257,7 @@ def _mha_forward(
   num_warps_ = num_warps
   num_stages = 1
     
-  block_q = 16
+  block_q = 32
   block_k = 32
   
   batch_size, q_seq_len, num_heads, head_dim = q.shape
@@ -334,7 +334,7 @@ def _preprocess_backward(out, do, lse, block_q: int,
   num_warps = 2
   num_stages = 1
     
-  block_q = 16
+  block_q = 32
   block_k = 32
   
   batch_size, seq_len, num_heads, head_dim = out.shape
@@ -529,7 +529,7 @@ def _mha_backward(sm_scale: float, causal: bool, block_q: int, block_k: int,
   num_warps = 2
   num_stages = 1
     
-  block_q = 16
+  block_q = 32
   block_k = 32
   
   if backward_pass_impl == "xla":

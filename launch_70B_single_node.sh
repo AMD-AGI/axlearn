@@ -1,5 +1,5 @@
 export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
-export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true"
+export XLA_FLAGS="--xla_gpu_enable_cublaslt=True --xla_gpu_graph_level=0 --xla_gpu_autotune_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=False"
 export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
 export HSA_FORCE_FINE_GRAIN_PCIE=1
 export GPU_MAX_HW_QUEUES=2
@@ -26,3 +26,5 @@ python3 -m axlearn.common.launch_trainer_main \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
   --mesh_selector="amd-mi300-single-node" \
+  # --trainer_dir="/home/mingyyan/axlearn/single-node-70B/"  \
+  # --trace_at_steps=0,3,6 
