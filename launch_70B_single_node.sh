@@ -22,7 +22,7 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
 
 mkdir -p /tmp/gpt_c4_test; \
 python3 -m axlearn.common.launch_trainer_main \
-  --module=text.gpt.c4_trainer --config=fuji-3B-v3-flash-single-host \
+  --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
   --mesh_selector="amd-mi300-single-node" \

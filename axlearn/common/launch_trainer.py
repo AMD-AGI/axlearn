@@ -106,6 +106,7 @@ def get_trainer_config(
     trainer_config.mesh_shape = trainer_config.mesh_shape or (len(jax.devices()), 1)
     if isinstance(trainer_config.mesh_shape, MeshShape):
         trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
+    trainer_config.input.input_dispatcher.global_logical_batch_size = 16
     trainer_config.start_trace_steps = [int(el) for el in flag_values.trace_at_steps]
     if trainer_config.watchdog_timeout_seconds is None:
         trainer_config.watchdog_timeout_seconds = flag_values.trainer_watchdog_timeout_seconds

@@ -736,7 +736,10 @@ def _mha_backward(
     dkdv_in_spec = in_specs.copy()
     dkdv_in_spec.append(kv_index_offset_spec)
     dkdv_in_spec.append(kv_index_offset_size_spec)
-    num_warps = 8
+    ############################################
+    # num_warps = 8
+    num_warps = 2
+    ############################################
     if num_stages is None:
         num_stages = 2 if bias is None and jnp.float32 not in (q.dtype, k.dtype, v.dtype) else 1
 
@@ -976,12 +979,10 @@ class PallasGPUFlashAttention(BaseFlashAttention):
                 num_stages=1, 
                 block_k=32, 
                 block_q=32,
-                segment_ids=segment_ids,
+                segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
                 sm_scale=self.cfg.softmax_scale,
                 causal=True,
                 )
-
-
 
         # return flash_attention(
         #     query,
