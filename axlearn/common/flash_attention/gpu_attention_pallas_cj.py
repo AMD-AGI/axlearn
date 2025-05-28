@@ -269,7 +269,7 @@ def _mha_forward(
   # print(f"{grid = }")
   # if grid_ is None:
   #  grid_ = (pl.cdiv(q_seq_len, block_q), batch_size, num_heads)
-  grid_ = (pl.cdiv(q_seq_len, 128), batch_size, num_heads)
+  grid_ = (pl.cdiv(q_seq_len, 256), batch_size, num_heads)
   
   if num_warps_ is None:
     num_warps_ = 4 if head_dim <= 64 else 8
