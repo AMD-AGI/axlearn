@@ -340,7 +340,7 @@ def get_trainer_kwargs(
             max_sequence_length=max_sequence_length,
             train_batch_size=train_batch_size,
             max_step=max_step,
-            mesh_shape=mesh_shape_from_axes(data=-1, fsdp=8),
+            mesh_shape=mesh_shape_from_axes(data=-1),#, fsdp=8),
             mesh_rules=(
                 (
                     "neuron-(trn2|trn2n).48xlarge-64",
@@ -587,7 +587,7 @@ def get_trainer_kwargs(
     elif model_size == "70B":
         trainer_kwargs = dict(
             model_kwargs=dict(
-                num_layers=30,
+                num_layers=80,
                 hidden_dim=128 * 64,
                 num_heads=64,
                 # No GQA support in V1 models, so num_kv_heads is the same as num_heads.
