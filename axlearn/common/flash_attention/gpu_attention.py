@@ -972,35 +972,35 @@ class PallasGPUFlashAttention(BaseFlashAttention):
         tensor_bias = explicit_bias.value()
         logging.info("Using explicit bias %s", str(tensor_bias))
         
-        return mha(
-                query,
-                key,
-                value,
-                num_warps=2, 
-                num_stages=1, 
-                block_k=32, 
-                block_q=32,
-                segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
-                sm_scale=self.cfg.softmax_scale,
-                causal=True,
-                )
+        # return mha(
+        #         query,
+        #         key,
+        #         value,
+        #         num_warps=2, 
+        #         num_stages=1, 
+        #         block_k=32, 
+        #         block_q=32,
+        #         segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
+        #         sm_scale=self.cfg.softmax_scale,
+        #         causal=True,
+        #         )
 
-        # return flash_attention(
-        #     query,
-        #     key,
-        #     value,
-        #     bias=tensor_bias,
-        #     segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
-        #     prng_key=prng_key,
-        #     block_q=32,
-        #     block_k=32,
-        #     num_warps=2,
-        #     num_stages=1,
-        #     softmax_scale=self.cfg.softmax_scale,
-        #     mask_fn=mask.mask if mask.has_value() else None,
-        #     dropout_rate=self.cfg.dropout_rate,
-        #     interpret=self.cfg.interpret,
-        # )
+        return flash_attention(
+            query,
+            key,
+            value,
+            bias=tensor_bias,
+            segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
+            prng_key=prng_key,
+            block_q=32,
+            block_k=32,
+            num_warps=2,
+            num_stages=1,
+            softmax_scale=self.cfg.softmax_scale,
+            mask_fn=mask.mask if mask.has_value() else None,
+            dropout_rate=self.cfg.dropout_rate,
+            interpret=self.cfg.interpret,
+        )
 
 
 class CuDNNGPUFlashAttentionWithExplicitBias(CuDNNGPUFlashAttention):

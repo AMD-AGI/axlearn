@@ -21,12 +21,12 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
  
 
 mkdir -p /tmp/gpt_c4_test; \
+HIP_VISIBLE_DEVICES=0 CUDA_VISIBLE_DEVICES=0 \
 python3 -m axlearn.common.launch_trainer_main \
-  --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
+  --module=text.gpt.c4_trainer --config=fuji-3B-v3-flash-single-host \
   --trainer_dir=/tmp/gpt_c4_test --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
   --mesh_selector="amd-mi300-single-node" \
-  --batch_size=16 \
-  --num_layers=20 \
+  --batch_size=2 \
   # --trainer_dir="/home/mingyyan/axlearn/single-node-70B/"  \
   # --trace_at_steps=0,3,6 

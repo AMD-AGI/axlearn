@@ -2,6 +2,7 @@
 export JAX_BRANCH=rocm-jaxlib-v0.5.0-waves_per_eu-2
 export XLA_BRANCH=rocm-jaxlib-v0.5.0-waves_per_eu
 #export XLA_BRANCH=rocm-jaxlib-v0.5.0_aiss_ws64
+# export XLA_BRANCH=ci_v0.5.0_large_workload
 export ROCM_VERSION=6.3.4
 export PATH=/opt/rocm-$ROCM_VERSION/bin:/opt/rocm-$ROCM_VERSION/lib/llvm/bin:$PATH
 export ROCM_PATH=/opt/rocm-$ROCM_VERSION
@@ -11,7 +12,10 @@ cd /home
 python3 -m pip uninstall jax jaxlib jax-rocm60-pjrt jax-rocm60-plugin -y
 python3 -m pip install numpy wheel build ninja patchelf
 git clone https://github.com/ROCm/xla.git -b ${XLA_BRANCH}
-# git clone https://github.com/yaomingamd/xla.git -b ${XLA_BRANCH}
+cd xla
+# git checkout a4d4ce4
+cd ..
+# # git clone https://github.com/yaomingamd/xla.git -b ${XLA_BRANCH}
 git clone https://github.com/ROCm/jax.git -b ${JAX_BRANCH}
 cd jax
 python3 ./build/build.py build --wheels=jaxlib,jax-rocm-plugin,jax-rocm-pjrt --rocm_version=60 \

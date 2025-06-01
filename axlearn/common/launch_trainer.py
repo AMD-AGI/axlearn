@@ -68,7 +68,8 @@ flags.DEFINE_string(
     None,
     "The mesh selector string. See `SpmdTrainer.Config.mesh_rules` for details.",
 )
-
+flags.DEFINE_integer("num_layers", None, "Number of Transformer layers")
+flags.DEFINE_integer("batch_size", None, "Total batch size")
 FLAGS = flags.FLAGS
 
 
@@ -106,7 +107,10 @@ def get_trainer_config(
     trainer_config.mesh_shape = trainer_config.mesh_shape or (len(jax.devices()), 1)
     if isinstance(trainer_config.mesh_shape, MeshShape):
         trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
-    trainer_config.input.input_dispatcher.global_logical_batch_size = 16
+    if flag_values.num_layers is not None:
+        trainer_config.model.decoder.transformer.num_layers = flag_values.num_layers
+    if flag_values.batch_size is not None:
+        trainer_config.input.input_dispatcher.global_logical_batch_size = flag_values.batch_size
     trainer_config.start_trace_steps = [int(el) for el in flag_values.trace_at_steps]
     if trainer_config.watchdog_timeout_seconds is None:
         trainer_config.watchdog_timeout_seconds = flag_values.trainer_watchdog_timeout_seconds
