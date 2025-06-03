@@ -31,6 +31,8 @@ Compared to the implementation in the JAX repo, we made the following enhancemen
 import functools
 from collections.abc import Sequence
 from typing import Any, Optional, Tuple
+from packaging import version
+
 
 import jax
 import jax.numpy as jnp
@@ -44,6 +46,10 @@ from jax._src.cudnn.fused_attention_stablehlo import (
 from jax.ad_checkpoint import checkpoint_name
 from jax.experimental import pallas as pl
 try:
+    import transformer_engine
+except:
+    pass
+try:
     # for 1.14.0.dev0+b1abcf52
     from transformer_engine.jax.attention import (
         AttnBiasType,
@@ -52,8 +58,13 @@ try:
         fused_attn,
         SequenceDescriptor,
         is_fused_attn_kernel_available,
-        DotProductAttention
     )
+except:
+    pass
+
+try:
+    # 1.12.0.dev0+b8b92dc
+    from transformer_engine.jax.flax.transformer import DotProductAttention
 except:
     pass
 
@@ -1079,64 +1090,71 @@ class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
         causal, sliding, _ = split(
             bias, CausalAttentionBias, SlidingWindowAttentionBias
         )
-        mask_type = AttnMaskType.CAUSAL_MASK if (causal.has_value() or sliding.has_value()) else AttnMaskType.NO_MASK
+        te_newer_than112 = version.parse(transformer_engine.__version__) > version.parse("1.12.0")
+        if te_newer_than112:
+            mask_type = AttnMaskType.CAUSAL_MASK if (
+                        causal.has_value() or sliding.has_value()) else AttnMaskType.NO_MASK
+        else:
+            mask_type = "causal" if (causal.has_value() or sliding.has_value()) else "no_mask"
+
         window_size = None
         if sliding.has_value():
             window_size = (sliding.sliding_window_size, 0)
 
-        has_fused_attn_kernel = is_fused_attn_kernel_available(
-            q_dtype=query.dtype,
-            kv_dtype=key.dtype,
-            qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
-            attn_bias_type=AttnBiasType.NO_BIAS,
-            attn_mask_type=mask_type,
-            dropout_probability=self.cfg.dropout_rate,
-            q_num_heads=num_query_heads,
-            kv_num_heads= num_kv_heads,
-            q_max_seqlen= query.shape[1],
-            kv_max_seqlen= key.shape[1],
-            head_dim=head_dim,
-            window_size=window_size,
-        )
-        assert has_fused_attn_kernel, "Fused attention is not enabled because there is no available kernel.\n"
-        print('Using fused attention kernel. has_fused_attn_kernel=', has_fused_attn_kernel)
+
+        if te_newer_than112:
+            has_fused_attn_kernel = is_fused_attn_kernel_available(
+                q_dtype=query.dtype,
+                kv_dtype=key.dtype,
+                qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
+                attn_bias_type=AttnBiasType.NO_BIAS,
+                attn_mask_type=mask_type,
+                dropout_probability=self.cfg.dropout_rate,
+                q_num_heads=num_query_heads,
+                kv_num_heads= num_kv_heads,
+                q_max_seqlen= query.shape[1],
+                kv_max_seqlen= key.shape[1],
+                head_dim=head_dim,
+                window_size=window_size,
+            )
+            assert has_fused_attn_kernel, "Fused attention is not enabled because there is no available kernel.\n"
+            # print(f'Using fused attention kernel. has_fused_attn_kernel={has_fused_attn_kernel}')
 
 
-        q_seq_lens = jnp.ones((query.shape[0],), dtype=jnp.int32) * query.shape[1]
-        kv_seq_lens = jnp.ones((key.shape[0],), dtype=jnp.int32) * key.shape[1]
-        sequence_desc = SequenceDescriptor.from_seqlens(
-                seqlens=(q_seq_lens, kv_seq_lens))
+            q_seq_lens = jnp.ones((query.shape[0],), dtype=jnp.int32) * query.shape[1]
+            kv_seq_lens = jnp.ones((key.shape[0],), dtype=jnp.int32) * key.shape[1]
+            sequence_desc = SequenceDescriptor.from_seqlens(
+                    seqlens=(q_seq_lens, kv_seq_lens))
 
-        # transpose_batch_sequence=False ==> default behavior of fused_attn
-        out = fused_attn(
-            qkv=tuple(args.values()),
-            bias=None,
-            seed=None,
-            sequence_descriptor=sequence_desc,
-            attn_bias_type=AttnBiasType.NO_BIAS,
-            attn_mask_type=mask_type,
-            qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
-            scaling_factor=self.cfg.softmax_scale,
-            dropout_probability=self.cfg.dropout_rate,
-            is_training=True,
-            window_size= window_size,
-            # context_parallel_strategy=context_parallel_strategy,
-            # context_parallel_causal_load_balanced=True,
-        )
-        return out
-
-        # rocm_te_dot_product_attention = DotProductAttention(
-        #     head_dim=head_dim,
-        #     num_attention_heads=num_query_heads,
-        #     num_gqa_groups=num_kv_heads,
-        #     attn_mask_type=mask_type,
-        #     attn_bias_type="no_bias",
-        #     attention_dropout=self.cfg.dropout_rate,
-        #     dtype=query.dtype,
-        #     qkv_layout="BSHD_BSHD_BSHD",
-        #     transpose_batch_sequence=False,
-        #     scale_factor=self.cfg.softmax_scale,
-        #     window_size=window_size,
-        # )
-        #
-        # return rocm_te_dot_product_attention.apply({}, rngs={'dropout': prng_key}, **args)
+            # transpose_batch_sequence=False ==> default behavior of fused_attn
+            out = fused_attn(
+                qkv=tuple(args.values()),
+                bias=None,
+                seed=None,
+                sequence_descriptor=sequence_desc,
+                attn_bias_type=AttnBiasType.NO_BIAS,
+                attn_mask_type=mask_type,
+                qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
+                scaling_factor=self.cfg.softmax_scale,
+                dropout_probability=self.cfg.dropout_rate,
+                is_training=True,
+                window_size= window_size,
+                # context_parallel_strategy=context_parallel_strategy,
+                # context_parallel_causal_load_balanced=True,
+            )
+            return out
+        else:
+            rocm_te_dot_product_attention = DotProductAttention(
+                head_dim=head_dim,
+                num_attention_heads=num_query_heads,
+                num_gqa_groups=num_kv_heads,
+                attn_mask_type=mask_type,
+                attn_bias_type="no_bias",
+                attention_dropout=self.cfg.dropout_rate,
+                dtype=query.dtype,
+                qkv_layout="BSHD_BSHD_BSHD",
+                transpose_batch_sequence=False,
+                scale_factor=self.cfg.softmax_scale,
+                window_size=window_size,
+            )
+            return rocm_te_dot_product_attention.apply({}, rngs={'dropout': prng_key}, **args)
