@@ -736,7 +736,9 @@ def _mha_backward(
     dkdv_in_spec = in_specs.copy()
     dkdv_in_spec.append(kv_index_offset_spec)
     dkdv_in_spec.append(kv_index_offset_size_spec)
-    num_warps = 8
+    # num_warps = 8
+    num_warps = 2
+    num_stages = 1
     if num_stages is None:
         num_stages = 2 if bias is None and jnp.float32 not in (q.dtype, k.dtype, v.dtype) else 1
 
@@ -974,6 +976,10 @@ class PallasGPUFlashAttention(BaseFlashAttention):
             bias=tensor_bias,
             segment_ids=get_segment_ids(query=query, key=key, segment_ids=segment_ids),
             prng_key=prng_key,
+            block_q=32,
+            block_k=32,
+            num_warps=2,
+            num_stages=1,
             softmax_scale=self.cfg.softmax_scale,
             mask_fn=mask.mask if mask.has_value() else None,
             dropout_rate=self.cfg.dropout_rate,

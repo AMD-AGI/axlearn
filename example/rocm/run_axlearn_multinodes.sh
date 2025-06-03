@@ -9,7 +9,7 @@ START_TIME=$(echo "$START_TIME" | sed 's/T/-/; s/:/-/g')
 
 WORKDIR="${WORKDIR:=$(pwd)}"
 EXAMPLE_DIR="${WORKDIR}/example/rocm"
-IMAGE_NAME="${IMAGE_NAME:=rocm/jax-training:maxtext-v25.5}"
+IMAGE_NAME="${IMAGE_NAME:=rocm/jax-private:rocm6.4.0-jax0.5.0-2805-py3.10.12-tedev}"
 # IMAGE_NAME="${IMAGE_NAME:=rocm/jax-private:rocm6.3.1-jax0.4.35-py3.10.15_cs}"
 
 source ${EXAMPLE_DIR}/set_slurm_multinodes_parameters_if_missing.sh

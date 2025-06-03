@@ -25,8 +25,8 @@ BACKENDS = dict(
     gpu=[
         GPUDecoding,
         # For GPU, prefer cuDNN (without bias) whenever possible, as it's the fastest.
-        ROCmTransformerEngineFlashAttention,
-        CuDNNGPUFlashAttention,
+        #ROCmTransformerEngineFlashAttention,
+        #CuDNNGPUFlashAttention,
         # Fallbacks to Pallas if cuDNN cannot be used without instantiating bias tensors.
         PallasGPUFlashAttention,
         # If Pallas is not supported, fallback to cuDNN with bias as the last resort before we
