@@ -91,6 +91,12 @@ flags.DEFINE_integer(
 flags.DEFINE_integer("num_layers", None, "Number of Transformer layers")
 flags.DEFINE_integer("batch_size", None, "Total batch size")
 
+flags.DEFINE_integer("force_pallas", None, "Number of Transformer layers")
+flags.DEFINE_integer("gpu_block_q", None, "Total batch size")
+flags.DEFINE_integer("gpu_block_k", None, "Number of Transformer layers")
+flags.DEFINE_integer("num_warps", None, "Total batch size")
+flags.DEFINE_integer("num_stages", None, "Total batch size")
+
 FLAGS = flags.FLAGS
 
 
@@ -186,6 +192,21 @@ def get_trainer_config(
 
     if flag_values.num_layers is not None:
         trainer_config.model.decoder.transformer.num_layers = flag_values.num_layers
+    
+    if flag_values.force_pallas is not None:
+        trainer_config.model.decoder.transformer.layer.self_attention.attention.force_pallas = True if flag_values.force_pallas==1 else False
+
+    if flag_values.gpu_block_q is not None:
+        trainer_config.model.decoder.transformer.layer.self_attention.attention.gpu_block_q = flag_values.gpu_block_q
+
+    if flag_values.gpu_block_k is not None:
+        trainer_config.model.decoder.transformer.layer.self_attention.attention.gpu_block_k = flag_values.gpu_block_k
+
+    if flag_values.num_warps is not None:
+        trainer_config.model.decoder.transformer.layer.self_attention.attention.num_warps = flag_values.num_warps
+
+    if flag_values.num_stages is not None:
+        trainer_config.model.decoder.transformer.layer.self_attention.attention.num_stages = flag_values.num_stages
 
     if flag_values.batch_size is not None:
         trainer_config.input.input_dispatcher.global_logical_batch_size = flag_values.batch_size

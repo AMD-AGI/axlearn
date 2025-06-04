@@ -89,7 +89,13 @@ def scaled_hidden_dim(scale: float, *, round_up_to_multiples_of: int = 256) -> F
     )
 
 
-def flash_attention_config() -> FlashAttention.Config:
+def flash_attention_config(
+    force_pallas: bool = True, 
+    gpu_block_q: int = 32,
+    gpu_block_k: int = 16,
+    num_warps: int = 2,
+    num_stages: int = 1,
+    ) -> FlashAttention.Config:
     """Builds a FlashAttention config with sharding config."""
     return FlashAttention.default_config().set(
         causal=True,
@@ -102,6 +108,11 @@ def flash_attention_config() -> FlashAttention.Config:
             "btnh": PartitionSpec(("data", "expert", "fsdp"), "seq", "model", None),
             "bnts": PartitionSpec(("data", "expert", "fsdp"), "model", "seq", None),
         },
+        force_pallas=force_pallas,
+        gpu_block_q=gpu_block_q,
+        gpu_block_k=gpu_block_k,
+        num_warps=num_warps,
+        num_stages=num_stages
     )
 
 
