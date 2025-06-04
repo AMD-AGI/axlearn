@@ -31,6 +31,12 @@ export MESH_EXPERT="${MESH_EXPERT:=1}"
 export MESH_FSDP="${MESH_FSDP:=-1}"
 export MESH_SEQ="${MESH_SEQ:=1}"
 export MESH_MODEL="${MESH_MODEL:=1}"
+export FORCE_PALLAS="${FORCE_PALLAS:=1}"
+export GPU_BLOCK_Q="${GPU_BLOCK_Q:=32}"
+export GPU_BLOCK_K="${GPU_BLOCK_K:=32}"
+export NUM_WARPS="${NUM_WARPS:=2}"
+export NUM_STAGES="${NUM_STAGES:=1}"
+
 
 mkdir -p /tmp/gpt_c4_test
 python3 -m axlearn.common.launch_trainer_main \
@@ -49,4 +55,11 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_fsdp $MESH_FSDP \
   --mesh_seq $MESH_SEQ \
   --mesh_model $MESH_MODEL \
-  &> ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.log
+  --force_pallas $FORCE_PALLAS \
+  --gpu_block_q $GPU_BLOCK_Q \
+  --gpu_block_k $GPU_BLOCK_K \
+  --num_warps $NUM_WARPS \
+  --num_stages $NUM_STAGES \
+  --trainer_dir="/home/mingyyan/axlearn/single-node-70B/" \
+  --trace_at_steps=0,3,6 \
+  |& tee ${LOG_OUTPUT_FOLDER}/output_$(date +%s)_p${MESH_PIPELINE}_d${MESH_DATA}_e${MESH_EXPERT}_f${MESH_FSDP}_s${MESH_SEQ}_m${MESH_MODEL}.log

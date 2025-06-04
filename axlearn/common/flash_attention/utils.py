@@ -25,8 +25,8 @@ BACKENDS = dict(
     gpu=[
         GPUDecoding,
         # For GPU, prefer cuDNN (without bias) whenever possible, as it's the fastest.
-        #ROCmTransformerEngineFlashAttention,
-        #CuDNNGPUFlashAttention,
+        ROCmTransformerEngineFlashAttention,
+        CuDNNGPUFlashAttention,
         # Fallbacks to Pallas if cuDNN cannot be used without instantiating bias tensors.
         PallasGPUFlashAttention,
         # If Pallas is not supported, fallback to cuDNN with bias as the last resort before we
@@ -49,6 +49,11 @@ def flash_attention_implementation(
     is_decoding: bool = False,
     tpu_block_size: int = 512,
     gpu_block_size: int = 128,
+    force_pallas: bool = True, 
+    gpu_block_q: int = 32,
+    gpu_block_k: int = 16,
+    num_warps: int = 2,
+    num_stages: int = 1,
     dropout_rate: Optional[float] = 0.0,
 ) -> Optional[BaseFlashAttention]:
     """Returns a jitted "flash" multihead-attention implementation for the given backend.
@@ -94,6 +99,25 @@ def flash_attention_implementation(
         tpu_block_size=tpu_block_size,
         gpu_block_size=gpu_block_size,
     )
+    
+    pallas_cfg = dict(
+        is_decoding=is_decoding,
+        dropout_rate=dropout_rate,
+        interpret=_interpret(backend),
+        softmax_scale=softmax_scale,
+        tpu_block_size=tpu_block_size,
+        gpu_block_size=gpu_block_size,
+        gpu_block_q=gpu_block_q,
+        gpu_block_k=gpu_block_k,
+        num_warps=num_warps,
+        num_stages=num_stages
+    )
+
+    if force_pallas:
+        logging.warning(f"Forcing to use Pallas Attention with block_q={gpu_block_q}, block_k={gpu_block_k}, num_warps={num_warps}, num_stages={num_stages}")
+        attn_fn = PallasGPUFlashAttention.default_config().set(**pallas_cfg).instantiate()
+        return attn_fn
+
     for cfg in attn_configs:
         attn_fn = cfg.default_config().set(**common_cfg).instantiate()
         if attn_fn.is_supported(query=query, key=key, value=value, bias=bias):

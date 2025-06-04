@@ -50,7 +50,13 @@ class FlashAttention(GroupedQueryAttention):
         # Should be less than the target sequence length and a multiple of 128 on TPU.
         # TODO(tom_gunter): Expose GPU block-size (currently always 128) & unify.
         tpu_block_size: int = 512
-
+        
+        force_pallas: bool = True, 
+        gpu_block_q: int = 32,
+        gpu_block_k: int = 16,
+        num_warps: int = 2,
+        num_stages: int = 1,
+        
         # SPMD partition specs:
         # B - batch dim,
         # T - target sequence length,
@@ -92,6 +98,11 @@ class FlashAttention(GroupedQueryAttention):
             "btnh": PartitionSpec(None),
             "bnts": PartitionSpec(None),
         }
+        cfg.force_pallas=False
+        cfg.gpu_block_q=32
+        cfg.gpu_block_k=32
+        cfg.num_warps=2
+        cfg.num_stages=1
         return cfg
 
     def _backend(self):
@@ -196,6 +207,12 @@ class FlashAttention(GroupedQueryAttention):
             # TODO(hanzhi-zhou): Refactor backend specific config passing.
             tpu_block_size=cfg.tpu_block_size,
             dropout_rate=cfg.dropout.rate,
+            # Pallas control
+            force_pallas=cfg.force_pallas,
+            gpu_block_q=cfg.gpu_block_q,
+            gpu_block_k=cfg.gpu_block_k,
+            num_warps=cfg.num_warps,
+            num_stages=cfg.num_stages
         )
         if jit_attn is None:
             # Fall back to standard attention if no backend kernels are supported.

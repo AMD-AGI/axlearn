@@ -115,6 +115,11 @@ class BaseFlashAttention(Configurable):
         interpret: bool = False
         tpu_block_size: int = 512
         gpu_block_size: int = 128
+        force_pallas: bool = True, 
+        gpu_block_q: int = 32,
+        gpu_block_k: int = 16,
+        num_warps: int = 2,
+        num_stages: int = 1,
 
     def __init__(self, cfg):
         super().__init__(cfg)
