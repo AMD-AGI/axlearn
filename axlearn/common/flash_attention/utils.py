@@ -100,7 +100,7 @@ def flash_attention_implementation(
         gpu_block_size=gpu_block_size,
     )
 
-    pallas_cfg = dict(Add commentMore actions
+    pallas_cfg = dict(
         is_decoding=is_decoding,
         dropout_rate=dropout_rate,
         interpret=_interpret(backend),
