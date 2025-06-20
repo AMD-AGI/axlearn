@@ -7,7 +7,7 @@ export NCCL_IB_SL=0
 export NCCL_CHECKS_DISABLE=1
 export NCCL_PROTO=Simple
 export NCCL_CROSS_NIC=0
-# check available NCCL_IB_HCA: lspci
+# check available NCCL_IB_HCA: rdma dev / ibv_devinfo -l
 export NCCL_IB_HCA=rdma0,rdma1,rdma2,rdma3,rdma4,rdma5,rdma6,rdma7
 # export NCCL_IB_HCA=mlx5_ib0,mlx5_ib1,mlx5_ib2,mlx5_ib3,mlx5_ib4,mlx5_ib5,mlx5_ib6,mlx5_ib7
 # check available NCCL_SOCKET_IFNAME: ifconfig / ip addr
