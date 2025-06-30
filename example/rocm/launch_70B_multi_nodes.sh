@@ -68,6 +68,12 @@ export MESH_DCN_FSDP="${MESH_DCN_FSDP:=1}"
 export MESH_DCN_SEQ="${MESH_DCN_SEQ:=1}"
 export MESH_DCN_MODEL="${MESH_DCN_MODEL:=1}"
 
+export FORCE_PALLAS="${FORCE_PALLAS:=0}"
+export GPU_BLOCK_Q="${GPU_BLOCK_Q:=32}"
+export GPU_BLOCK_K="${GPU_BLOCK_K:=32}"
+export NUM_WARPS="${NUM_WARPS:=2}"
+export NUM_STAGES="${NUM_STAGES:=1}"
+
 if [[ -z "$1" ]]; then
     echo "Please provide a timestamp in the first argument" >&2
 fi
@@ -100,4 +106,9 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_dcn_fsdp $MESH_DCN_FSDP \
   --mesh_dcn_seq $MESH_DCN_SEQ \
   --mesh_dcn_model $MESH_DCN_MODEL \
+  --force_pallas $FORCE_PALLAS \
+  --gpu_block_q $GPU_BLOCK_Q \
+  --gpu_block_k $GPU_BLOCK_K \
+  --num_warps $NUM_WARPS \
+  --num_stages $NUM_STAGES \
   &> ${LOG_OUTPUT_FOLDER}/${run_name}/${PROCESS_ID}.log
