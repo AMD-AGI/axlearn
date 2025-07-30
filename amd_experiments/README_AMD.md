@@ -90,31 +90,32 @@ Under the hood hipblaslt tuned GEMMs specifies a configuration file to ```HIPBLA
 
 ---
 
-## MoE model experiments (WIP)
+## MoE model experiments
 
-We use the same environment for MoE models, to set-up, follow the instructions above but make sure to use the correct repo + branch combination (see above). we follow a similar structure for the MoE models below:
-
-The experiments for the MoE models are based off 
+We use the same environment for MoE models, to set-up, follow the instructions above but make sure to use the correct repo + branch combination (see above). we follow a similar structure for the MoE models below. We also provide additional README in axlearn_dev under example/rocm/.
 
 We study the 44B Envy Mixture of experts model under different configurations. The main script for the Envy model is
 ```
 bash amd_experiments/benchmark_moe_envy.sh
 ```
-By defaults it runs on a 1) single node with 2) Expert parallelism 3) Tuned-GEMMs if available 4) `ROCM TransfomerEngine` Attention and 5) runs with **per-node** batch-size of 16. Below we list different modifications of this base script:
+By default it runs on a 1) single node with 2) expert parallelism 3) Tuned-GEMMs if available 4) `ROCM TransfomerEngine` Attention and 5) runs with **per-node** batch-size of 16. Below we list different modifications of this base script:
 ##### Multi-node scaling
-Using the same convention as above the model can be launched manually for multi-node.
+Using the same convention as above the model can be launched manually for multi-node. e.g. 
+* if a shared filesystem is missing clone the repo again on the other nodes, then run the same environment Set-up as above.
+* After setting up, you can launch multi-node manually by running
+```
+# on head-node
+NUM_PROCESSES=2 PROCESS_ID=0 HEAD_NODE=MY_NODE_NAME \
+bash amd_experiments/benchmark_moe_envy.sh
 
-You can also automate multi-node launching by running
-````bash
-NODE_1=<node-1-hostname>
-NODE_2=<node-2-hostname>
-NODE_3=<node-3-hostname>
-NODES=($(hostname) $NODE_1 $NODE_2 $NODE_3)
-BATCH_SIZE_BASE=16
-bash example/rocm/run.sh
-````
+# on 2nd-node
+NUM_PROCESSES=2 PROCESS_ID=1 HEAD_NODE=MY_NODE_NAME \
+bash amd_experiments/benchmark_moe_envy.sh
+```
+You can also automate multi-node launching with slurm or a bare-bone launcher, we can help set this up based on the way you will set up the cluster.
+
 ##### hipblaslt Tuned GEMMs 
-We use the same configurations to configure the use of tuned GEMMs
+We use the same flag to configure the use of tuned GEMMs
 
 
 

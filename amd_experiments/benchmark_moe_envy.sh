@@ -55,11 +55,11 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
 #################################
 # Experiment Settings
 #################################
-export EXP_NAME="${EXP_NAME:=amd_70B_fuji_bs32_fsdp8}"
+export EXP_NAME="${EXP_NAME:=amd_moe_envy_bs16_ep8}"
 export MAX_STEP="${MAX_STEP:=80}"
 export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=20}"
-export NUM_LAYERS="${NUM_LAYERS:=80}"
-export PER_NODE_BATCH_SIZE="${PER_NODE_BATCH_SIZE:=32}"
+export NUM_LAYERS="${NUM_LAYERS:=32}"
+export PER_NODE_BATCH_SIZE="${PER_NODE_BATCH_SIZE:=16}"
 
 # Multi-node settings
 export NUM_PROCESSES="${NUM_PROCESSES:=1}"
@@ -71,8 +71,8 @@ export BATCH_SIZE=$((NUM_PROCESSES * PER_NODE_BATCH_SIZE))
 # Mesh settings
 export MESH_PIPELINE="${MESH_PIPELINE:=1}"
 export MESH_DATA="${MESH_DATA:=1}"
-export MESH_EXPERT="${MESH_EXPERT:=1}"
-export MESH_FSDP="${MESH_FSDP:=8}" # FSDP intra-node
+export MESH_EXPERT="${MESH_EXPERT:=8}" # Expert-Parallel intra-node
+export MESH_FSDP="${MESH_FSDP:=1}"
 export MESH_SEQ="${MESH_SEQ:=1}"
 export MESH_MODEL="${MESH_MODEL:=1}"
 export MESH_DCN_PIPELINE="${MESH_DCN_PIPELINE:=1}"
@@ -82,13 +82,6 @@ export MESH_DCN_FSDP="${MESH_DCN_FSDP:=1}"
 export MESH_DCN_SEQ="${MESH_DCN_SEQ:=1}"
 export MESH_DCN_MODEL="${MESH_DCN_MODEL:=1}"
 echo "MESH_PIPELINE=$MESH_PIPELINE MESH_DATA=$MESH_DATA MESH_EXPERT=$MESH_EXPERT MESH_FSDP=$MESH_FSDP MESH_SEQ=$MESH_SEQ MESH_MODEL=$MESH_MODEL"
-
-# Pallas Settings
-export FORCE_PALLAS="${FORCE_PALLAS:=0}" # default is no Pallas, default pallas configuration is best performing in most cases
-export GPU_BLOCK_Q="${GPU_BLOCK_Q:=64}"
-export GPU_BLOCK_K="${GPU_BLOCK_K:=32}"
-export NUM_WARPS="${NUM_WARPS:=2}"
-export NUM_STAGES="${NUM_STAGES:=1}"
 
 # XLA Flags
 export XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
@@ -116,7 +109,7 @@ build_mesh_string() {
    echo "$result"
 }
 tuned_gemms_dir='./amd_experiments/tuned_gemms/'
-model_settings="mi325x_fuji_70b" # for moe this would be "mi325x_moe"
+model_settings="mi325x_moe"
 tuned_gemms_path="${tuned_gemms_dir}gemm_${model_settings}_$(build_mesh_string).txt"
 
 if [[ $TUNED_GEMMS -eq 1 ]]; then
@@ -136,7 +129,7 @@ fi
 
 
 python3 -m axlearn.common.launch_trainer_main \
-  --module=text.gpt.c4_trainer --config=fuji-70B-v2-flash-single-host \
+  --module=text.gpt.c4_trainer --config=envy-Mistral-8x7B \
   --trainer_dir="${EXP_DIR}" --data_dir=gs://axlearn-public/tensorflow_datasets \
   --jax_backend=gpu \
   --max_step $MAX_STEP \
@@ -156,11 +149,6 @@ python3 -m axlearn.common.launch_trainer_main \
   --mesh_dcn_fsdp $MESH_DCN_FSDP \
   --mesh_dcn_seq $MESH_DCN_SEQ \
   --mesh_dcn_model $MESH_DCN_MODEL \
-  --force_pallas $FORCE_PALLAS \
-  --gpu_block_q $GPU_BLOCK_Q \
-  --gpu_block_k $GPU_BLOCK_K \
-  --num_warps $NUM_WARPS \
-  --num_stages $NUM_STAGES \
   --log_dir "${EXP_DIR}" \
   --trainer_dir "${EXP_DIR}" \
   --trace_at_steps="20" \
