@@ -13,7 +13,7 @@ from axlearn.common import file_system as fs
 from axlearn.common import measurement
 from axlearn.common.config import TrainerConfigFn, get_named_trainer_config
 from axlearn.common.trainer import SpmdTrainer, select_mesh_config
-from axlearn.common.utils import MeshShape, get_data_dir, infer_mesh_shape
+from axlearn.common.utils import MeshShape, HybridMeshShape, get_data_dir, infer_mesh_shape
 
 # Trainer-specific flags.
 flags.DEFINE_string(
@@ -81,6 +81,39 @@ flags.DEFINE_string(
     None,
     "The mesh selector string. See `SpmdTrainer.Config.mesh_rules` for details.",
 )
+# TODO ADDED
+flags.DEFINE_integer(
+    "mesh_pipeline", None, "Mesh Axis - pipeline. It's ICI axis when DCN axes provided."
+)
+flags.DEFINE_integer("mesh_data", None, "Mesh Axis - data. It's ICI axis when DCN axes provided.")
+flags.DEFINE_integer(
+    "mesh_expert", None, "Mesh Axis - expert. It's ICI axis when DCN axes provided."
+)
+flags.DEFINE_integer("mesh_fsdp", None, "Mesh Axis - fsdp. It's ICI axis when DCN axes provided.")
+flags.DEFINE_integer("mesh_seq", None, "Mesh Axis - seq. It's ICI axis when DCN axes provided.")
+flags.DEFINE_integer("mesh_model", None, "Mesh Axis - model. It's ICI axis when DCN axes provided.")
+flags.DEFINE_integer("mesh_dcn_pipeline", None, "Mesh DCN Axis - pipeline")
+flags.DEFINE_integer("mesh_dcn_data", None, "Mesh DCN Axis - data")
+flags.DEFINE_integer("mesh_dcn_expert", None, "Mesh DCN Axis - expert")
+flags.DEFINE_integer("mesh_dcn_fsdp", None, "Mesh DCN Axis - fsdp")
+flags.DEFINE_integer("mesh_dcn_seq", None, "Mesh DCN Axis - seq")
+flags.DEFINE_integer("mesh_dcn_model", None, "Mesh DCN Axis - model")
+flags.DEFINE_integer("max_step", None, "Maximum number of steps")
+flags.DEFINE_integer(
+    "step_to_cal_avg_step_time",
+    None,
+    "The number of steps to calculate and log average step time. "
+    "If None, defaults to every 100 steps.",
+)
+flags.DEFINE_integer("num_layers", None, "Number of Transformer layers")
+flags.DEFINE_integer("batch_size", None, "Total batch size")
+
+# flags.DEFINE_integer("force_pallas", None, "Number of Transformer layers")
+# flags.DEFINE_integer("gpu_block_q", None, "Total batch size")
+# flags.DEFINE_integer("gpu_block_k", None, "Number of Transformer layers")
+# flags.DEFINE_integer("num_warps", None, "Total batch size")
+# flags.DEFINE_integer("num_stages", None, "Total batch size")
+
 
 FLAGS = flags.FLAGS
 
@@ -117,8 +150,75 @@ def get_trainer_config(
         select_mesh_config(trainer_config, mesh_selector=flag_values.mesh_selector)
     trainer_config.mesh_axis_names = trainer_config.mesh_axis_names or ("data", "model")
     trainer_config.mesh_shape = trainer_config.mesh_shape or (len(jax.devices()), 1)
+
+
+
+    # TODO ADDED
+    if all(
+            ele is not None
+            for ele in [
+                flag_values.mesh_pipeline,
+                flag_values.mesh_data,
+                flag_values.mesh_expert,
+                flag_values.mesh_fsdp,
+                flag_values.mesh_seq,
+                flag_values.mesh_model,
+            ]
+    ):
+        if all(
+                ele is not None
+                for ele in [
+                    flag_values.mesh_dcn_pipeline,
+                    flag_values.mesh_dcn_data,
+                    flag_values.mesh_dcn_expert,
+                    flag_values.mesh_dcn_fsdp,
+                    flag_values.mesh_dcn_seq,
+                    flag_values.mesh_dcn_model,
+                ]
+        ):
+            ici_mesh_shape = (
+                flag_values.mesh_pipeline,
+                flag_values.mesh_data,
+                flag_values.mesh_expert,
+                flag_values.mesh_fsdp,
+                flag_values.mesh_seq,
+                flag_values.mesh_model,
+            )
+            dcn_mesh_shape = (
+                flag_values.mesh_dcn_pipeline,
+                flag_values.mesh_dcn_data,
+                flag_values.mesh_dcn_expert,
+                flag_values.mesh_dcn_fsdp,
+                flag_values.mesh_dcn_seq,
+                flag_values.mesh_dcn_model,
+            )
+            mesh_shape = HybridMeshShape(
+                ici_mesh_shape=ici_mesh_shape, dcn_mesh_shape=dcn_mesh_shape
+            )
+        else:
+            mesh_shape = (
+                flag_values.mesh_pipeline,
+                flag_values.mesh_data,
+                flag_values.mesh_expert,
+                flag_values.mesh_fsdp,
+                flag_values.mesh_seq,
+                flag_values.mesh_model,
+            )
+
+        trainer_config.mesh_shape = mesh_shape
+
     if isinstance(trainer_config.mesh_shape, MeshShape):
         trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
+
+    if flag_values.num_layers is not None:
+        trainer_config.model.decoder.transformer.num_layers = flag_values.num_layers
+
+    if flag_values.batch_size is not None:
+        trainer_config.input.input_dispatcher.global_logical_batch_size = flag_values.batch_size
+
+
+    # if isinstance(trainer_config.mesh_shape, MeshShape):
+    #     trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
     trainer_config.start_trace_steps = [int(el) for el in flag_values.trace_at_steps]
     if trainer_config.watchdog_timeout_seconds is None:
         trainer_config.watchdog_timeout_seconds = flag_values.trainer_watchdog_timeout_seconds
@@ -128,6 +228,8 @@ def get_trainer_config(
         )
     if trainer_config.log_every_n_steps is None:
         trainer_config.log_every_n_steps = flag_values.trainer_log_every_n_steps
+    if trainer_config.step_to_cal_avg_step_time is None:
+        trainer_config.step_to_cal_avg_step_time = flag_values.step_to_cal_avg_step_time
     for eval_cfg in trainer_config.evalers.values():
         eval_cfg.trace_at_iters = [int(el) for el in flag_values.eval_trace_at_iters]
     if flag_values.device_monitor == "tpu":
@@ -144,6 +246,9 @@ def get_trainer_config(
         # Set trainer_dir if not already set.
         if not isinstance(trainer_config.checkpointer.trainer_dir, str):
             trainer_config.checkpointer.trainer_dir = trainer_config.dir
+
+    if flag_values.max_step is not None: # TODO ADDED
+        trainer_config.max_step = flag_values.max_step
     return trainer_config
 
 
