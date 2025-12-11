@@ -1,4 +1,4 @@
-IMAGE_NAME="docker.io/rocm/pyt-megatron-lm-jax-nightly-private:jax_rocm7.0_jax_0.6.2_latest"
+IMAGE_NAME="rocm/pyt-megatron-lm-jax-nightly-private:jax_rocm7.0_20250930"
 CONTAINER_NAME="axlearn_jax6"
 AXLEARN_PATH="TODO ADD YOUR PATH HERE"
 

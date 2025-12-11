@@ -28,7 +28,7 @@ Compared to the implementation in the JAX repo, we made the following enhancemen
 * Support dropout.
 * Support arbitrary mask function like Pytorch FlexAttention.
 """
-
+from packaging import version
 import functools
 from collections.abc import Sequence
 from typing import Any, Optional, Tuple
@@ -70,6 +70,29 @@ from axlearn.common.kv_cache.base_kv_cache import BaseKVCache
 from axlearn.common.kv_cache.kv_cache import KVCache
 from axlearn.common.layers import get_dropout_mask
 from axlearn.common.utils import Nested, Tensor
+
+try:
+    import transformer_engine
+except:
+    pass
+try:
+    # for 1.14.0.dev0+b1abcf52
+    from transformer_engine.jax.attention import (
+        AttnBiasType,
+        AttnMaskType,
+        QKVLayout,
+        fused_attn,
+        SequenceDescriptor,
+        is_fused_attn_kernel_available,
+    )
+except:
+    pass
+
+try:
+    # 1.12.0.dev0+b8b92dc
+    from transformer_engine.jax.flax.transformer import DotProductAttention
+except:
+    pass
 
 
 def _segment_mask(
@@ -1002,3 +1025,157 @@ class CuDNNGPUFlashAttentionWithExplicitBias(CuDNNGPUFlashAttention):
     """
 
     _allow_explicit_bias = True
+
+
+class ROCmTransformerEngineFlashAttention(BaseFlashAttention):
+    """Wraps Transformer Engine DotProductAttention to enable Flash Attention on ROCm.
+
+    Currently it has only been tested on standard Llama-like configs, and training only.
+    """
+
+    _allow_explicit_bias = False
+
+    def is_supported(
+        self,
+        input_batch: Nested[Tensor | BaseAttentionBias],
+        kv_cache_type: Optional[type[BaseKVCache]],
+    ) -> bool:
+        """See `BaseFlashAttention.is_supported`."""
+        if not super().is_supported(input_batch=input_batch, kv_cache_type=kv_cache_type):
+            return False
+
+        query: Tensor = input_batch["query"]
+        key: Tensor = input_batch["key"]
+        value: Tensor = input_batch["value"]
+        bias: BaseAttentionBias = input_batch["bias"]
+
+        try:
+            from transformer_engine.jax.flax.transformer import DotProductAttention
+        except ImportError:
+            return self._log_unsupported("could not import Transformer Engine")
+
+        if not self._check_block_size(input_batch, block_size=2):
+                return False
+
+        if query.dtype not in (jnp.float16, jnp.bfloat16):
+            return self._log_unsupported(
+                f"{query.dtype=} is not supported. Only supports float16 and bfloat16."
+            )
+
+        if jax.default_backend() == "cpu":
+            return self._log_unsupported("we're on CPU emulation.")
+
+        head_dim = query.shape[-1]
+        if head_dim % 8 != 0:
+            return self._log_unsupported(f"{head_dim=} is not divisible by 8.")
+        if head_dim > 128:
+            return self._log_unsupported(f"{head_dim=} > 128")
+        _, sliding, explicit_bias = split(bias, CausalAttentionBias, SlidingWindowAttentionBias)
+
+        if sliding.has_value():
+            if self.cfg.dropout_rate != 0.0:
+                return self._log_unsupported("sliding window with dropout has not been tested.)")
+        if explicit_bias.has_value() and not self._allow_explicit_bias:
+            return self._log_unsupported("we don't allow explicit bias at this stage.")
+
+        logging.info("Using %s.", self.name())
+        return True
+
+    @functools.partial(jax.jit, static_argnames=["self"])
+    def __call__(
+        self,
+        input_batch: Nested[Tensor | BaseAttentionBias],
+    ) -> Tensor:
+        """See `BaseFlashAttention.__call__`."""
+        query: Tensor = input_batch["query"]
+        key: Tensor = input_batch["key"]
+        value: Tensor = input_batch["value"]
+        bias: BaseAttentionBias = input_batch["bias"]
+        args = dict(
+            query=query,
+            key=repeat_kv_heads(query.shape[2], key),
+            value=repeat_kv_heads(query.shape[2], value),
+        )
+
+        _, _, num_query_heads, head_dim_q = query.shape
+        _, _, num_kv_heads, _ = key.shape
+        _, _, _, head_dim_v = value.shape
+
+        causal, sliding, _ = split(
+            bias, CausalAttentionBias, SlidingWindowAttentionBias
+        )
+        te_newer_than112 = version.parse(transformer_engine.__version__) > version.parse("1.12.0")
+        if te_newer_than112:
+            mask_type = AttnMaskType.CAUSAL_MASK if (
+                    causal.has_value() or sliding.has_value()) else AttnMaskType.NO_MASK
+        else:
+            mask_type = "causal" if (causal.has_value() or sliding.has_value()) else "no_mask"
+
+        window_size = None
+        if sliding.has_value():
+            window_size = (sliding.sliding_window_size, 0)
+
+        if te_newer_than112:
+            has_fused_attn_kernel = is_fused_attn_kernel_available(
+                q_dtype=query.dtype,
+                kv_dtype=key.dtype,
+                qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
+                attn_bias_type=AttnBiasType.NO_BIAS,
+                attn_mask_type=mask_type,
+                dropout_probability=self.cfg.dropout_rate,
+                q_num_heads=num_query_heads,
+                kv_num_heads=num_kv_heads,
+                q_max_seqlen=query.shape[1],
+                kv_max_seqlen=key.shape[1],
+                window_size=window_size,
+                head_dim_qk=head_dim_q,
+                head_dim_v=head_dim_v,
+            )
+
+            assert has_fused_attn_kernel, "Fused attention is not enabled because there is no available kernel.\n"
+
+            q_seq_lens = jnp.ones((query.shape[0],), dtype=jnp.int32) * query.shape[1]
+            kv_seq_lens = jnp.ones((key.shape[0],), dtype=jnp.int32) * key.shape[1]
+            sequence_desc = SequenceDescriptor.from_seqlens(
+                seqlens=(q_seq_lens, kv_seq_lens))
+
+            # transpose_batch_sequence=False ==> default behavior of fused_attn
+            out = fused_attn(
+                qkv=tuple(args.values()),
+                bias=None,
+                seed=None,
+                sequence_descriptor=sequence_desc,
+                attn_bias_type=AttnBiasType.NO_BIAS,
+                attn_mask_type=mask_type,
+                qkv_layout=QKVLayout.BSHD_BSHD_BSHD,
+                scaling_factor=self.cfg.softmax_scale,
+                dropout_probability=0.0, # TODO bring back this is important!!!
+                is_training=True,
+                window_size=window_size,
+                # context_parallel_strategy=context_parallel_strategy,
+                # context_parallel_causal_load_balanced=True,
+            )
+            return out
+        else:
+            rocm_te_dot_product_attention = DotProductAttention(
+                head_dim=head_dim_q,
+                num_attention_heads=num_query_heads,
+                num_gqa_groups=num_kv_heads,
+                attn_mask_type=mask_type,
+                attn_bias_type="no_bias",
+                attention_dropout=self.cfg.dropout_rate,
+                dtype=query.dtype,
+                qkv_layout="BSHD_BSHD_BSHD",
+                transpose_batch_sequence=False,
+                scale_factor=self.cfg.softmax_scale,
+                window_size=window_size,
+            )
+            return rocm_te_dot_product_attention.apply({}, rngs={'dropout': prng_key}, **args)
+
+
+
+        """
+"""
+
+
+

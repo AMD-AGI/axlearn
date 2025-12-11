@@ -8,6 +8,7 @@ from absl import logging
 from axlearn.common.attention_bias import BaseAttentionBias
 from axlearn.common.flash_attention.common import ReferenceMHA
 from axlearn.common.flash_attention.gpu_attention import (
+    ROCmTransformerEngineFlashAttention,
     CuDNNGPUFlashAttention,
     CuDNNGPUFlashAttentionWithExplicitBias,
     PallasGPUFlashAttention,
@@ -32,6 +33,7 @@ BACKENDS = dict(
     tpu=[TPUDecoding, TPUSplashAttentionWithAllGather, TPUSplashAttention, LegacyTPUFlashAttention],
     gpu=[
         GPUDecoding,
+        ROCmTransformerEngineFlashAttention, # TODO added
         # For GPU, prefer cuDNN (without bias) whenever possible, as it's the fastest.
         CuDNNGPUFlashAttention,
         # Fallbacks to Pallas if cuDNN cannot be used without instantiating bias tensors.

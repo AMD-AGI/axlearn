@@ -1,6 +1,5 @@
 #!/bin/bash
 set -x
-export NUM_LAYERS=4 # short model since TE is not enabled
 
 
 #################################
@@ -60,7 +59,7 @@ echo "MESH_PIPELINE=$MESH_PIPELINE MESH_DATA=$MESH_DATA MESH_EXPERT=$MESH_EXPERT
 
 
 # XLA Flags
-#export XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
+export XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
 #export XLA_FLAGS=$XLA_FLAGS" --xla_dump_to="$EXP_DIR"/xla_dump" # for Profiling logs
 
 
@@ -68,8 +67,8 @@ export EXP_DIR=$(pwd)"/amd_experiments/logs/"$EXP_NAME
 mkdir -p $EXP_DIR
 echo "Logging to: ${EXP_DIR}"
 
-#CONFIG=fuji-70B-v2-flash
-CONFIG=fuji-70B-v2 # basic version no Flash Attention
+
+CONFIG=fuji-70B-v2-flash
 
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=$CONFIG \
