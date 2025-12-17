@@ -5,8 +5,42 @@ set -x
 #################################
 # Jax and TransformerEngine Setup
 #################################
+export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
+export NCCL_DEBUG=INFO
+export HSA_FORCE_FINE_GRAIN_PCIE=1
+# export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
+# export HSA_FORCE_FINE_GRAIN_PCIE=1
+# export GPU_MAX_HW_QUEUES=2
+# export HIP_FORCE_DEV_KERNARG=1
+# export NVTE_ALLOW_NONDETERMINISTIC_ALGO=1
+# export NVTE_FUSED_ATTN=1
+# export NVTE_FUSED_ATTN_CK=1
+# export NVTE_FUSED_ATTN_AOTRITON=1
+# export NVTE_CK_EXT_ASM=1
+# export NVTE_CK_ASM_ATOMIC_FP32=0
+# export NVTE_CK_ASM_NO_COEX=0
+# export NVTE_CK_ASM_RTZ_CVT=1
+# export NVTE_CK_BWD_V3=1
+# export NVTE_CK_V3_RTZ_CVT=2
+# export NVTE_CK_USES_BWD_V3=1
+# export NVTE_CK_IS_V3_ATOMIC_FP32=0
+# export NVTE_CK_IS_V3_SPEC=1
+# export NVTE_CK_HOW_V3_BF16_CVT=2
+# export TF_CPP_MIN_LOG_LEVEL="2"
+
+# export NCCL_DEBUG_FILE=fuji-70b.%h.%p.log
+export NCCL_IB_DISABLE=1
+
+# export NCCL_PROTO=Simple
+# export NCCL_IB_TC=41
+# export NCCL_IB_SL=0
+# export NCCL_CHECKS_DISABLE=1
+# export NCCL_CROSS_NIC=0
+# export NCCL_SOCKET_IFNAME=enp81s0f1
+
+
 export GPU_MAX_HW_QUEUES=2
-export XLA_PYTHON_CLIENT_MEM_FRACTION=0.975
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.95
 export HIP_FORCE_DEV_KERNARG=1
 export TF_CPP_MIN_LOG_LEVEL="2"
 export NVTE_ALLOW_NONDETERMINISTIC_ALGO=1
@@ -29,7 +63,7 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
 #################################
 # Experiment Settings
 #################################
-export EXP_NAME="${EXP_NAME:=amd_70B_fuji_bs32_fsdp8}"
+export EXP_NAME="${EXP_NAME:=fuji_70B}"
 export MAX_STEPS="${MAX_STEPS:=80}"
 export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=20}"
 export NUM_LAYERS="${NUM_LAYERS:=80}"
@@ -62,8 +96,9 @@ echo "MESH_PIPELINE=$MESH_PIPELINE MESH_DATA=$MESH_DATA MESH_EXPERT=$MESH_EXPERT
 export XLA_FLAGS="${XLA_FLAGS:=--xla_gpu_graph_level=0 --xla_gpu_enable_latency_hiding_scheduler=true --xla_gpu_enable_triton_gemm=false}"
 #export XLA_FLAGS=$XLA_FLAGS" --xla_dump_to="$EXP_DIR"/xla_dump" # for Profiling logs
 
+TIMESTAMP="${TIMESTAMP:=$(date +'%Y-%m-%d-%H-%M-%S')}"
 
-export EXP_DIR=$(pwd)"/amd_experiments/logs/"$EXP_NAME
+export EXP_DIR=$(pwd)"/amd_experiments/logs/"${EXP_NAME}_bs${BATCH_SIZE}_${TIMESTAMP}
 mkdir -p $EXP_DIR
 echo "Logging to: ${EXP_DIR}"
 
