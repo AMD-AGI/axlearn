@@ -108,6 +108,7 @@ CONFIG=fuji-70B-v2-flash
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=$CONFIG \
   --trainer_dir="${EXP_DIR}" --data_dir=gs://axlearn-public/tensorflow_datasets \
+  --trace_at_steps=56 \
   --jax_backend=gpu \
   --max_step $MAX_STEPS \
   --trainer_log_every_n_steps $STEP_TO_CAL_AVG_STEP_TIME \
@@ -130,4 +131,3 @@ python3 -m axlearn.common.launch_trainer_main \
   --log_dir "${EXP_DIR}" \
   --trainer_dir "${EXP_DIR}" \
   2>&1 | tee ${EXP_DIR}/output${PROCESS_ID}.log
-#   --trace_at_steps="20" \
