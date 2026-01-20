@@ -210,7 +210,8 @@ def get_trainer_config(
     if isinstance(trainer_config.mesh_shape, MeshShape):
         trainer_config.mesh_shape = infer_mesh_shape(trainer_config.mesh_shape)
 
-    if flag_values.num_layers is not None:
+    if flag_values.num_layers is not None and flag_values.num_layers > 0:
+        logging.warning("OVERRIDING num_layers: %d -> %d", trainer_config.model.decoder.transformer.num_layers, flag_values.num_layers)
         trainer_config.model.decoder.transformer.num_layers = flag_values.num_layers
 
     if flag_values.batch_size is not None:

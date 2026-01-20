@@ -29,11 +29,11 @@ export NVTE_CK_HOW_V3_BF16_CVT=2
 #################################
 # Experiment Settings
 #################################
-export EXP_NAME="${EXP_NAME:=amd_70B_fuji_bs32_fsdp8}"
+export EXP_NAME="${EXP_NAME:=amd_7B_fuji_bs256_fsdp8}"
 export MAX_STEPS="${MAX_STEPS:=80}"
 export STEP_TO_CAL_AVG_STEP_TIME="${STEP_TO_CAL_AVG_STEP_TIME:=20}"
 export NUM_LAYERS="${NUM_LAYERS:=-1}" # now doesn't overwrite by default
-export PER_NODE_BATCH_SIZE="${PER_NODE_BATCH_SIZE:=32}"
+export PER_NODE_BATCH_SIZE="${PER_NODE_BATCH_SIZE:=256}"
 
 # Multi-node settings
 export NUM_PROCESSES="${NUM_PROCESSES:=1}"
@@ -68,7 +68,7 @@ mkdir -p $EXP_DIR
 echo "Logging to: ${EXP_DIR}"
 
 
-CONFIG=fuji-70B-v2-flash
+CONFIG=fuji-7B-v2-flash
 
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=$CONFIG \
