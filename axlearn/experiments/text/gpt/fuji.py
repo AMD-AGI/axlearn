@@ -75,6 +75,7 @@ class Version(enum.Enum):
     V2 = 2
     V3 = 3
     V3_TIKTOKEN = "3-tiktoken"
+    V4 = 4
 
 
 # Mapping from Fuji versions to vocab sizes.
@@ -83,6 +84,7 @@ VOCAB_SIZE = {
     Version.V2: 32 * 1024,
     Version.V3: 128 * 1024,
     Version.V3_TIKTOKEN: 128256,
+    Version.V4: 32 * 1024,  # Same as V2
 }
 
 
@@ -92,6 +94,7 @@ MAX_SEQUENCE_LENGTH = {
     Version.V2: 4096,
     Version.V3: 8192,
     Version.V3_TIKTOKEN: 8192,
+    Version.V4: 4096,  # Same as V2
 }
 
 
@@ -100,6 +103,7 @@ ROPE_THETA = {
     Version.V2: 1e4,
     Version.V3: 5e5,
     Version.V3_TIKTOKEN: 5e5,
+    Version.V4: 1e4,  # Same as V2
 }
 
 # Mapping from Fuji versions to total number of tokens used in training.
@@ -129,6 +133,12 @@ TOTAL_TOKENS = {
         "8B": 15 * (1024**4),  # 15T tokens
         "70B": 15 * (1024**4),  # 15T tokens
         "405B": 15 * (1024**4),  # 15T tokens
+    },
+    Version.V4: {  # Same as V2 but with GQA
+        "test": 2 * (1024**4),  # 2T tokens
+        "7B": 2 * (1024**4),  # 2T tokens
+        "8B": 2 * (1024**4),  # 2T tokens
+        "70B": 2 * (1024**4),  # 2T tokens
     },
 }
 
@@ -180,6 +190,7 @@ TOKENS_PER_BATCH = {
     Version.V2: 4 * (1024**2),
     Version.V3: 16 * (1024**2),
     Version.V3_TIKTOKEN: 16 * (1024**2),
+    Version.V4: 4 * (1024**2),  # Same as V2
 }
 
 
@@ -215,8 +226,10 @@ def _generate_trn2_custom_configs(
             modification=StackedTransformerLayer.default_config(),
         )
     ]
-    # Grouped QKV is only used in fuji-v3 except in fuji-v2 if model is 70B.
-    if version == Version.V3 or (model_size == "70B" and version != Version.V1):
+    # Grouped QKV is used in fuji-v3, v4, and v2 if model is 70B.
+    if version in (Version.V3, Version.V3_TIKTOKEN, Version.V4) or (
+        model_size == "70B" and version == Version.V2
+    ):
         trn2_module_modifications.append(
             ModuleConfigModifier.default_config().set(
                 target_config="model.decoder.transformer.layer.self_attention.attention."
@@ -295,7 +308,7 @@ def get_trainer_kwargs(
 
     # Whether to use grouped query attention.
     num_kv_heads = None
-    if version in (Version.V3, Version.V3_TIKTOKEN):
+    if version in (Version.V3, Version.V3_TIKTOKEN, Version.V4):
         num_kv_heads = 8
 
     rope_theta = ROPE_THETA[version]
@@ -839,6 +852,24 @@ def get_trainer_kwargs(
                         ],
                     ),
                 ),
+                # ( # TODO turned off since leads to lower perf
+                #     "amd-mi300-single-node",
+                #     ChainConfigModifier.default_config().set(
+                #         config_modifiers=[
+                #             MeshShapeModifier.default_config().set(
+                #                 mesh_shape=mesh_shape_from_axes(fsdp=-1)
+                #             ),
+                #             RematSpecModifier.default_config().set(
+                #                 remat_policies={
+                #                     "model.decoder.transformer.layer": RematSpec(
+                #                         prevent_cse=False,
+                #                         policy=jax_remat_policies.nothing_saveable,
+                #                     ),
+                #                 }
+                #             ),
+                #         ],
+                #     ),
+                # ),
             ),
         )
     elif model_size == "405B":
