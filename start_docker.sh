@@ -2,7 +2,17 @@ IMAGE_NAME="rocm/pyt-megatron-lm-jax-nightly-private:jax_rocm7.0_20250930"
 CONTAINER_NAME="axlearn_jax6"
 AXLEARN_PATH="TODO ADD YOUR PATH HERE"
 
-BASH_CMD="cd ${AXLEARN_PATH}; pip install -e ."
+AXLEARN_CMD="cd ${AXLEARN_PATH}; pip install -e ."
+TENSILE_KERNEL_CMD="mkdir tmp && cd tmp && \
+git clone --filter=blob:none --sparse https://github.com/ROCm/rocm-libraries.git && \
+cd rocm-libraries && \
+git sparse-checkout set projects/hipblaslt shared/origami && \
+git checkout 6908f3 && \
+cd projects/hipblaslt && \
+bash ./install.sh -idc -a gfx950 --skip_rocroller && \
+cd ${AXLEARN_PATH}
+"
+BASH_CMD="${AXLEARN_CMD} && ${TENSILE_KERNEL_CMD}"
 
 
 docker run -it \

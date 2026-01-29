@@ -4,7 +4,6 @@ set -x
 
 export TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
 
-
 # BS=16
 PER_NODE_BATCH_SIZE=16 bash scripts/benchmark_70B_fuji_mi350.sh
 
@@ -22,7 +21,7 @@ PER_NODE_BATCH_SIZE=48 bash scripts/benchmark_70B_fuji_mi350.sh
 
 
 # # Get HIPBLAST log for GEMM tuning (optional)
-# export HIPBLASLT_LOG_MASK=64
+# export HIPBLASLT_LOG_MASK=128
 
 # # BS=16
 # export HIPBLASLT_LOG_FILE=axlearn_fuji_70b_fsdp8_bs16_mi355x.txt

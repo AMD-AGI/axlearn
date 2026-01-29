@@ -29,7 +29,6 @@ export HSA_FORCE_FINE_GRAIN_PCIE=1
 # export TF_CPP_MIN_LOG_LEVEL="2"
 
 # export NCCL_DEBUG_FILE=fuji-70b.%h.%p.log
-export NCCL_IB_DISABLE=1
 
 # export NCCL_PROTO=Simple
 # export NCCL_IB_TC=41
@@ -40,7 +39,7 @@ export NCCL_IB_DISABLE=1
 
 
 export GPU_MAX_HW_QUEUES=2
-export XLA_PYTHON_CLIENT_MEM_FRACTION=0.95
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.97
 export HIP_FORCE_DEV_KERNARG=1
 export TF_CPP_MIN_LOG_LEVEL="2"
 export NVTE_ALLOW_NONDETERMINISTIC_ALGO=1
@@ -57,7 +56,6 @@ export NVTE_CK_USES_BWD_V3=1
 export NVTE_CK_IS_V3_ATOMIC_FP32=0
 export NVTE_CK_IS_V3_SPEC=1
 export NVTE_CK_HOW_V3_BF16_CVT=2
-
 
 
 #################################
@@ -105,10 +103,10 @@ echo "Logging to: ${EXP_DIR}"
 
 CONFIG=fuji-70B-v2-flash
 
+  # --trace_at_steps=56 \
 python3 -m axlearn.common.launch_trainer_main \
   --module=text.gpt.c4_trainer --config=$CONFIG \
   --trainer_dir="${EXP_DIR}" --data_dir=gs://axlearn-public/tensorflow_datasets \
-  --trace_at_steps=56 \
   --jax_backend=gpu \
   --max_step $MAX_STEPS \
   --trainer_log_every_n_steps $STEP_TO_CAL_AVG_STEP_TIME \
